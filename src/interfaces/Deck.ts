@@ -1,5 +1,5 @@
 export interface Card {
-  type: 'NUMBERED' | 'SKIP' | 'REVERSE' | 'DRAW' | 'WILD' | 'WILD DRAW';
+  type: 'NUMBERED' | 'BLOCK' | 'REVERSE' | 'DRAW2' | 'WILD' | 'DRAW4';
   color: 'RED' | 'BLUE' | 'GREEN' | 'YELLOW' | null; // Wild cards have null color
   number?: number; // Only present for NUMBERED cards
 }

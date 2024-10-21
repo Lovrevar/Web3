@@ -1,3 +1,4 @@
+import type { Card } from './Deck';
 export interface Hand {
   // Returns the current player's hand (array of cards)
   playerHand(playerIndex: number): Card[];
