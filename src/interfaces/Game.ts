@@ -1,4 +1,4 @@
-interface Game {
+export interface Game {
   // Start the game with a set number of players and initialize their hands
   start(players: string[]): void;
 

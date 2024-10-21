@@ -2,12 +2,12 @@
   <div>
     <h2>UNO Game Setup</h2>
     <label for="bots">Choose number of bots (1-3):</label>
-    <input type="number" id="bots" v-model="numberOfBots" min="1" max="3">
+    <input type="number" id="bots" v-model="state.numberOfBots" min="1" max="3">
     <button @click="startGame">Start Game</button>
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { reactive } from 'vue';
 
 const state = reactive({
