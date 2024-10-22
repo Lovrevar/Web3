@@ -21,12 +21,19 @@ export class Game {
     this.players = players;
     this.scores = players.map(() => 0);
     this.deck.initialize();
-    this.deck.shuffle(Math.random);
+    this.deck.shuffle();
 
     // Deal hands and start the first hand
     const playerHands = players.map(() => new PlayerHand());
-    const firstHand = new Hand(playerHands, [this.deck.deal()]);
 
+    // Deal 7 cards to each player from the deck
+    for (let i = 0; i < 7; i++) {
+      playerHands.forEach((hand) => {
+        hand.addCard(this.deck.deal()!); // Ensure the deck is used for dealing cards
+      });
+    }
+
+    const firstHand = new Hand(playerHands, [this.deck.deal()!], this.deck);
     this.hands.push(firstHand);
   }
 
@@ -51,7 +58,15 @@ export class Game {
   // Start a new hand
   private startNewHand(): void {
     const playerHands = this.players.map(() => new PlayerHand());
-    const newHand = new Hand(playerHands, [this.deck.deal()]);
+
+    // Deal 7 new cards to each player from the deck
+    for (let i = 0; i < 7; i++) {
+      playerHands.forEach((hand) => {
+        hand.addCard(this.deck.deal()!); // Continue drawing cards from the deck
+      });
+    }
+
+    const newHand = new Hand(playerHands, [this.deck.deal()!], this.deck);
     this.hands.push(newHand);
   }
 
@@ -95,5 +110,15 @@ export class Game {
       return this.players[winningScoreIndex];
     }
     return undefined;
+  }
+
+  // Check if the game has ended
+  hasGameEnded(): boolean {
+    return this.gameOver;
+  }
+
+  // Return the current score of all players
+  currentScore(): number[] {
+    return this.scores;
   }
 }

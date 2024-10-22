@@ -9,10 +9,10 @@ export interface IDeck {
   initialize(): ICard[];
 
   // Shuffle the deck using a provided shuffling method
-  shuffle(shuffler: Function): void;
+  shuffle(): void;
 
   // Deal a card from the deck (removes the card from the deck)
-  deal(): ICard | undefined;
+  deal(): ICard;
 
   // Return the current size of the deck
   size(): number;

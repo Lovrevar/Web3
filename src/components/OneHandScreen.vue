@@ -1,4 +1,4 @@
-<template>
+<!-- <template>
   <div class="game-container">
     <div class="player-hand">
       <h2>Your Hand</h2>
@@ -251,4 +251,4 @@ ul {
   list-style-type: none;
   padding: 0;
 }
-</style>
+</style> -->

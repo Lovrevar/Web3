@@ -45,10 +45,13 @@ export class Deck implements IDeck {
     }
   
     // Deal a card from the deck (removes the card from the deck)
-    deal(): ICard | undefined {
-      return this.cards.shift();
+    deal(): ICard {
+      const card = this.cards.shift();
+      if (!card) {
+        throw new Error('The deck is empty. No more cards to deal.');
+      }
+      return card;
     }
-  
     // Return the current size of the deck
     size(): number {
       return this.cards.length;
