@@ -56,13 +56,13 @@
 <script lang="ts">
 import { defineComponent } from 'vue';
 
-import { Card } from '../interfaces/Deck.ts';
+import type { ICard } from '../interfaces/IDeck.js';
 
 export default defineComponent({
   name: 'UNOCard',
   props: {
     card: {
-      type: Object as () => Card,
+      type: Object as () => ICard,
       required: true,
     },
   },

@@ -1,7 +1,7 @@
-import type { Card } from './Deck';
-export interface Hand {
+import type { ICard } from './IDeck';
+export interface IHand {
   // Returns the current player's hand (array of cards)
-  playerHand(playerIndex: number): Card[];
+  playerHand(playerIndex: number): ICard[];
 
   // Check if a player can play a card based on game rules
   canPlay(cardIndex: number): boolean;

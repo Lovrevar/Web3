@@ -1,16 +1,16 @@
-import type { Card } from './IDeck'; // Import the Card interface
-import type { Bot } from './IBot';  // Import the Bot interface
+import type { ICard } from '../interfaces/IDeck'; // Import the Card interface
+import type { IBot } from '../interfaces/IBot';  // Import the Bot interface
 
 // Example implementation of the Bot interface
-export class SimpleBot implements Bot {
-  hand: Card[];
+export class Bot implements IBot {
+  hand: ICard[];
 
-  constructor(initialHand: Card[]) {
+  constructor(initialHand: ICard[]) {
     this.hand = initialHand;
   }
 
   // Bot decides which card to play
-  playCard(discardPile: Card[]): Card | null {
+  playCard(discardPile: ICard[]): ICard | null {
     const topCard = discardPile[discardPile.length - 1];
 
     // Find all cards in the bot's hand that can be legally played
@@ -39,9 +39,9 @@ export class SimpleBot implements Bot {
   }
 
   // Bot draws a card and adds it to its hand
-  drawCard() : Card{
+  drawCard() : ICard{
     // Simulate drawing a card (in reality, this should come from the deck)
-    const newCard: Card = { type: 'NUMBERED', color: 'BLUE', number: Math.floor(Math.random() * 10) };
+    const newCard: ICard = { type: 'NUMBERED', color: 'BLUE', number: Math.floor(Math.random() * 10) };
     this.hand.push(newCard);
     console.log('Bot drew a card');
     return newCard;
