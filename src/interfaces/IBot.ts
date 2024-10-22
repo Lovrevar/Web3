@@ -9,8 +9,7 @@ export interface IBot {
   playCard(discardPile: ICard[]): ICard | null;
 
   // The bot draws a card (you can implement the draw logic separately)
-  drawCard(): void;
-
+  drawCard(newCard: ICard): void;
   // Check if the bot has forgotten to say UNO (if it has only one card left)
   shouldSayUno(): boolean;
 

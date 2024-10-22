@@ -1,33 +1,43 @@
+import type { ICard } from '../interfaces/IDeck';
 import type { IDeck } from '../interfaces/IDeck';
 import type { IHand } from '../interfaces/IHand';
 import { Hand } from './Hand';
 import { PlayerHand } from './PlayerHand';
+import { SimpleBot } from './SimpleBot';
 
 export class Game {
   private hands: IHand[] = [];
   private deck: IDeck;
   private scores: number[] = [];
   private players: string[] = [];
+  private bots: SimpleBot[] = [];
   private currentPlayerIndex: number = 0;
   private gameOver: boolean = false;
   private winningScore: number = 500;
+  private discardPile: ICard[] = [];
 
   constructor(deck: IDeck) {
     this.deck = deck;
   }
 
-  // Start the game and initialize players
+  // Start the game and initialize players and bots
   start(players: string[]): void {
     this.players = players;
     this.scores = players.map(() => 0);
     this.deck.initialize();
     this.deck.shuffle();
 
-    // Deal hands and start the first hand
+    // Deal hands and create bots
     const playerHands = players.map(() => new PlayerHand());
+    for (let i = 1; i < players.length; i++) {
+      this.bots.push(new SimpleBot(playerHands[i].getCards()));  // Initialize bots with their hands
+    }
+
+    // Set discard pile's first card
+    this.discardPile.push(this.deck.deal()!);
 
     // Create the first hand and deal cards
-    const firstHand = new Hand(playerHands, [this.deck.deal()!], this.deck);
+    const firstHand = new Hand(playerHands, this.discardPile, this.deck);
     this.hands.push(firstHand);
   }
 
@@ -49,18 +59,42 @@ export class Game {
     }
   }
 
-  // Start a new hand
-  private startNewHand(): void {
-    const playerHands = this.players.map(() => new PlayerHand());
-
-    // Create a new hand and deal cards
-    const newHand = new Hand(playerHands, [this.deck.deal()!], this.deck);
-    this.hands.push(newHand);
+  // Play the player's card
+  playPlayerCard(index: number): void {
+    const currentHand = this.hands[this.hands.length - 1];
+    currentHand.play(index);
   }
 
-  // Move to the next player's turn
-  private nextPlayer(): void {
-    this.currentPlayerIndex = (this.currentPlayerIndex + 1) % this.players.length;
+  // Draw a card for the player
+  drawPlayerCard(): void {
+    const currentHand = this.hands[this.hands.length - 1];
+    currentHand.draw();
+  }
+
+  // Bot takes their turn
+  playBotTurns(botSaidUno: boolean[], botNames: string[]): void {
+    this.bots.forEach((bot, index) => {
+      const card = bot.playCard(this.discardPile);
+
+      if (card) {
+        // Bot plays a card
+        this.discardPile.push(card);
+
+        if (bot.hand.length === 1 && !botSaidUno[index]) {
+          botNames[index] = `Bot ${index + 1} says UNO`;
+          botSaidUno[index] = true;
+        } else if (bot.hand.length === 0) {
+          botNames[index] = `Bot ${index + 1} wins!`;
+          this.gameOver = true;
+        }
+      } else {
+        // Bot draws a card
+        const newCard = this.deck.deal();
+        if (newCard) {
+          bot.drawCard(newCard);
+        }
+      }
+    });
   }
 
   // Update the scores based on cards left in hands
@@ -105,8 +139,31 @@ export class Game {
     return this.gameOver;
   }
 
-  // Return the current score of all players
-  currentScore(): number[] {
-    return this.scores;
+  // Return the current discard pile's top card
+  currentDiscardCard(): ICard {
+    return this.discardPile[this.discardPile.length - 1];
+  }
+
+  // Get the player's hand
+  playerHand(): ICard[] {
+    return this.hands[this.hands.length - 1].playerHand(0).getCards();
+  }
+
+  // Get the bot's hand
+  botHand(index: number): ICard[] {
+    return this.bots[index].hand;
+  }
+  private nextPlayer(): void {
+    this.currentPlayerIndex = (this.currentPlayerIndex + 1) % this.players.length;
+  }
+  private startNewHand(): void {
+    const playerHands = this.players.map(() => new PlayerHand());
+  
+    // Create a new hand and deal cards
+    const newHand = new Hand(playerHands, [this.deck.deal()!], this.deck);
+    this.hands.push(newHand);
+  
+    // Reset current player index to the first player for the new hand
+    this.currentPlayerIndex = 0;
   }
 }

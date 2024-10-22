@@ -2,7 +2,7 @@ import type { ICard } from '../interfaces/IDeck'; // Import the Card interface
 import type { IBot } from '../interfaces/IBot';  // Import the Bot interface
 
 // Example implementation of the Bot interface
-export class Bot implements IBot {
+export class SimpleBot implements IBot {
   hand: ICard[];
 
   constructor(initialHand: ICard[]) {
@@ -39,12 +39,9 @@ export class Bot implements IBot {
   }
 
   // Bot draws a card and adds it to its hand
-  drawCard() : ICard{
-    // Simulate drawing a card (in reality, this should come from the deck)
-    const newCard: ICard = { type: 'NUMBERED', color: 'BLUE', number: Math.floor(Math.random() * 10) };
+  drawCard(newCard: ICard): void {
     this.hand.push(newCard);
     console.log('Bot drew a card');
-    return newCard;
   }
 
   // Check if the bot should say UNO
@@ -56,8 +53,6 @@ export class Bot implements IBot {
   sayUno() {
     if (this.shouldSayUno()) {
       console.log('Bot says UNO!');
-    } else {
-      console.log('Bot has more than one card, no need to say UNO');
     }
   }
 }
