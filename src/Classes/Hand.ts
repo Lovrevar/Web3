@@ -9,10 +9,13 @@ export class Hand implements IHand {
   private currentPlayer: number = 0;
   private deck: IDeck;
 
-  constructor(discardPile: ICard[], deck: IDeck) { // Accept the deck as a parameter
+  constructor(playerHands: IPlayerHand[], discardPile: ICard[], deck: IDeck) {
+    this.playerHands = playerHands;
     this.discardPile = discardPile;
-    this.deck = deck;  // Assign the deck
-    this.deal(this.playerHands,7);
+    this.deck = deck;
+
+    // Deal cards to players when the hand starts
+    this.deal(this.playerHands, 7);
   }
 
   // Return the current player's hand
@@ -46,28 +49,30 @@ export class Hand implements IHand {
         card.color = chosenColor; // Set the chosen color
       }
     }
-    
+
     // Check for game end after playing
     if (playerHand.getCards().length === 0) {
       console.log(`Player ${this.currentPlayer} has won the hand!`);
     }
   }
+
+  // Deal cards to players
   deal(playerHands: IPlayerHand[], numCards: number): void {
-    // Loop through the players and deal the required number of cards
     for (let i = 0; i < numCards; i++) {
       playerHands.forEach((hand) => {
-        const card = this.deck.deal(); // Deal a card from the deck
+        const card = this.deck.deal();
         if (card) {
-          hand.addCard(card); // Add the card to the player's hand if it's valid
+          hand.addCard(card); // Add the card to the player's hand
         } else {
           throw new Error('Deck is empty. Cannot deal more cards.');
         }
       });
     }
   }
+
   // Draw a card for the current player
   draw(): void {
-    const newCard = this.deck.deal();  // Use the deck reference here
+    const newCard = this.deck.deal();
     this.playerHands[this.currentPlayer].addCard(newCard);
   }
 

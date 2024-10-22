@@ -9,13 +9,19 @@
 
 <script setup lang="ts">
 import { reactive } from 'vue';
+import { useRouter } from 'vue-router';  // Ensure router is imported
 
 const state = reactive({
   numberOfBots: 1,
 });
 
+const router = useRouter();  // Use router for navigation
+
 const startGame = () => {
-  // Navigate to the Play Game screen
-  console.log(`Starting game with ${state.numberOfBots} bots`);
+  console.log('Button clicked, starting the game...');  // Debugging
+
+  if (state.numberOfBots >= 1 && state.numberOfBots <= 3) {
+    router.push({ path: '/play-hand', query: { bots: state.numberOfBots } });
+  }
 };
 </script>

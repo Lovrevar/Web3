@@ -1,10 +1,13 @@
-<!-- src/App.vue -->
 <script setup lang="ts">
-import { RouterLink, RouterView } from 'vue-router';  // Import Vue Router components
+import { useRoute, RouterLink, RouterView } from 'vue-router';  // Import Vue Router components
+
+// We use the useRoute function to get information about the current route
+const route = useRoute();
 </script>
 
 <template>
-  <header>
+  <!-- Hide header if we're on the play-hand route -->
+  <header v-if="route.path !== '/play-hand'">
     <h1>UNO Game</h1>
     <nav>
       <RouterLink to="/">Game Setup</RouterLink>

@@ -28,8 +28,8 @@ export class Deck implements IDeck {
   
       // Wild and Draw4 cards (four of each, color is null)
       for (let i = 0; i < 4; i++) {
-        deck.push({ type: 'WILD', color: null });
-        deck.push({ type: 'DRAW4', color: null });
+        deck.push({ type: 'WILD', color: 'BLACK' });
+        deck.push({ type: 'DRAW4', color: 'BLACK'});
       }
   
       this.cards = deck;

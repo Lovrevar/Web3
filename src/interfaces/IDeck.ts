@@ -1,6 +1,6 @@
 export interface ICard {
   type: 'NUMBERED' | 'BLOCK' | 'REVERSE' | 'DRAW2' | 'WILD' | 'DRAW4';
-  color: 'RED' | 'BLUE' | 'GREEN' | 'YELLOW' | null; // Wild cards have null color
+  color: 'RED' | 'BLUE' | 'GREEN' | 'YELLOW' | 'BLACK'; // Wild cards have null color
   number?: number; // Only present for NUMBERED cards
 }
 

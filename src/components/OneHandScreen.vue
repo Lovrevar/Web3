@@ -1,254 +1,165 @@
-<!-- <template>
+<template>
   <div class="game-container">
-    <div class="player-hand">
-      <h2>Your Hand</h2>
-      <div v-for="(card, index) in playerHand" :key="index" class="card" @click="playCard(index)">
-        <!-- {{ card.color }} {{ card.number || card.type }} -->
-        {{ card.color }} {{ card.type === 'NUMBERED' ? card.number : card.type }}
-      </div>
-      <button class="action-button" @click="drawCard">Draw Card</button>
-      <button v-if="playerHand.length === 1" class="action-button" @click="sayUno">Say UNO!</button>
+    <!-- Player Area (Bottom) -->
+    <div class="player-area">
+      <h2>Player 1 (You)</h2>
+      <Hand :playerHand="playerHand" :playCard="playCard" />
     </div>
 
+    <!-- Bot 1 (Top) -->
+    <div v-if="numberOfBots >= 1" class="bot-area top centered">
+      <h2>Bot 1</h2>
+      <Hand :playerHand="botHands[0]" />
+    </div>
+
+    <!-- Bot 2 (Left, Vertical) -->
+    <div v-if="numberOfBots >= 2" class="bot-area left">
+      <h2>Bot 2</h2>
+      <Hand :playerHand="botHands[1]" :isVertical="true" />
+    </div>
+
+    <!-- Bot 3 (Right, Vertical) -->
+    <div v-if="numberOfBots >= 3" class="bot-area right">
+      <h2>Bot 3</h2>
+      <Hand :playerHand="botHands[2]" :isVertical="true" />
+    </div>
+
+    <!-- Discard Pile (Center) -->
     <div class="discard-pile">
-      <h3>Current Discard Pile: {{ discardPile[discardPile.length - 1].color }} {{ discardPile[discardPile.length - 1].number || discardPile[discardPile.length - 1].type }}</h3>
+      <UNOCard v-if="discardPile.length > 0" :card="discardPile[discardPile.length - 1]" />
     </div>
 
-    <div class="opponent-hand">
-      <h2>Opponent's Hand: {{ opponentHand.length }} cards</h2>
-    </div>
-
-    <div class="game-log">
-      <h3>Game Log</h3>
-      <ul>
-        <li v-for="(log, index) in gameLog" :key="index">{{ log }}</li>
-      </ul>
-
-      <!-- Display bot's hand for debugging -->
-      <h3>Bot's Hand (Debug)</h3>
-      <ul>
-  <li v-for="(card, index) in opponentHand" :key="'bot-card-' + index">
-    {{ card.color }} {{ card.type === 'NUMBERED' ? card.number : card.type }}
-  </li>
-</ul> 
+    <!-- Draw Card Button (Center) -->
+    <div class="draw-card-button">
+      <button @click="drawCard">Draw Card</button>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { reactive } from 'vue';
-import { useRouter } from 'vue-router'; // Use this for navigation to game-over screen
+import { ref, onMounted } from 'vue';
+import Hand from './Hand.vue';
+import UNOCard from './UnoCard.vue';
+import { Deck } from '../Classes/Deck';
+import { useRoute } from 'vue-router';
 import type { ICard } from '../interfaces/IDeck';
-import { SimpleBot } from '../interfaces/botPlay';
 
-// Initialize router for navigation
-const router = useRouter();
+const route = useRoute();
+const numberOfBots = parseInt(route.query.bots as string);
 
-// Initialize playerHand, opponentHands, discardPile, and gameLog
-const playerHand = reactive<ICard[]>([]);
-const opponentHand = reactive<ICard[]>([]);
-const discardPile = reactive<ICard[]>([{ type: 'NUMBERED', color: 'RED', number: 1 }]);
-const gameLog = reactive<string[]>([]); // Log of game actions
-const botHasDrawnCard = reactive({ value: false }); // Track if bot has drawn a card
+// Single deck instance for the entire game
+const deck = ref<Deck | null>(null);
 
-// Initialize both player and bot hands with 7 cards at the start of the game
-const initializeHands = () => {
+// Player and bot hands
+const playerHand = ref<ICard[]>([]);
+const botHands = ref<ICard[][]>([[], [], []]);
+const discardPile = ref<ICard[]>([]);
+
+// Initialize the deck
+onMounted(() => {
+  deck.value = new Deck();
+  deck.value.initialize();
+  deck.value.shuffle();
+
+  // Deal cards to players and bots
   for (let i = 0; i < 7; i++) {
-    playerHand.push(generateRandomCard());
-    opponentHand.push(generateRandomCard());
+    playerHand.value.push(deck.value.deal()!);
+    for (let j = 0; j < numberOfBots; j++) {
+      botHands.value[j].push(deck.value.deal()!);
+    }
   }
-  logAction('Game started. Hands have been dealt.');
-};
 
-// Log the last action
-const logAction = (message: string) => {
-  gameLog.push(message);
-  if (gameLog.length > 10) {
-    gameLog.shift(); // Keep only the last 10 log entries
-  }
-};
+  // Set the first card in the discard pile
+  discardPile.value.push(deck.value.deal()!);
+});
 
-// Function to check if the game should end
-const checkGameOver = () => {
-  if (playerHand.length === 0) {
-    logAction('Player wins the game!');
-    router.push('/game-over'); // Navigate to game over screen
-  } else if (opponentHand.length === 0) {
-    logAction('Bot wins the game!');
-    router.push('/game-over'); // Navigate to game over screen
-  }
-};
-
-// Function to handle player playing a card
+// Method to play a card
 const playCard = (index: number) => {
-  const selectedCard = playerHand[index];
-  const topCard = discardPile[discardPile.length - 1];
+  const cardToPlay = playerHand.value[index];
 
-  if (selectedCard.color === topCard.color || selectedCard.number === topCard.number || selectedCard.type === 'WILD' || selectedCard.type === 'DRAW4') {
-    // Handle special rules for numbered cards (same number, different colors)
-    const sameNumberCards = playerHand.filter((card) => card.number === selectedCard.number);
-    sameNumberCards.forEach((card) => {
-      discardPile.push(card);
-      playerHand.splice(playerHand.indexOf(card), 1);
-      logAction(`Player played ${card.color} ${card.number || card.type}`);
-    });
-
-    checkGameOver(); // Check if the game should end after playing the card
-    endTurn();
+  // Only allow play if the card matches color, number, or type with the top of the discard pile
+  const topCard = discardPile.value[discardPile.value.length - 1];
+  if (cardToPlay.color === topCard.color || cardToPlay.number === topCard.number || ['WILD', 'DRAW4'].includes(cardToPlay.type)) {
+    discardPile.value.push(cardToPlay);  // Add the card to the discard pile
+    playerHand.value.splice(index, 1);  // Remove the card from player's hand
   } else {
-    console.log('You cannot play this card');
+    alert('You cannot play this card!');
   }
 };
 
-// Bot logic
-const bot = new SimpleBot(opponentHand);
-
-const botTurn = () => {
-  // Check if bot has drawn a card last turn and try to play it
-  if (botHasDrawnCard.value) {
-    const botCard = bot.playCard(discardPile);
-    if (botCard) {
-      discardPile.push(botCard);
-      opponentHand.splice(opponentHand.indexOf(botCard), 1); // Remove the played card from bot's hand
-      logAction(`Bot played ${botCard.color} ${botCard.number || botCard.type}`);
-      botHasDrawnCard.value = false; // Reset flag after playing the drawn card
-      checkGameOver(); // Check if the game should end after the bot's play
-    } else {
-      console.log('Bot cannot play the drawn card');
-    }
-  } else {
-    // Bot tries to play a card from its hand
-    const botCard = bot.playCard(discardPile);
-    if (botCard) {
-      discardPile.push(botCard);
-      opponentHand.splice(opponentHand.indexOf(botCard), 1); // Remove the played card from bot's hand
-      logAction(`Bot played ${botCard.color} ${botCard.number || botCard.type}`);
-      checkGameOver(); // Check if the game should end after the bot's play
-    } else {
-      // Bot draws a card if it cannot play
-      console.log('Bot draws a card');
-      const newCard = bot.drawCard(); // Ensure drawCard returns a valid Card object
-      if (newCard) {
-        opponentHand.push(newCard); // Add the card to bot's hand
-        // botHasDrawnCard.value = true; // Bot has drawn a card and will try to play it next turn
-        logAction('Bot drew a card');
-      } else {
-        console.log('Error: Bot could not draw a card');
-      }
-    }
-  }
-
-  // If the bot has 1 card left, it says UNO
-  if (opponentHand.length === 1) {
-    logAction('Bot says UNO!');
-  }
-};
-
-  // If the bot has 1 card left, it says UNO
-  if (opponentHand.length === 1) {
-    logAction('Bot says UNO!');
-  };
-
-// Draw card for the player
+// Method to draw a card
 const drawCard = () => {
-  const newCard = generateRandomCard();
-  playerHand.push(newCard);
-  if (newCard.type=='NUMBERED') 
-  {
-    logAction(`Player drew a ${newCard.color} ${newCard.number}`);
-  }
-  else
-  logAction(`Player drew a ${newCard.color} ${newCard.type}`);
-  
-  checkGameOver(); // Check if the game should end after drawing the card
-  endTurn(); // Drawing a card ends the player's turn
-};
-
-// Generate a random card
-const generateRandomCard = (): Card => {
-  const colors = ['RED', 'BLUE', 'GREEN', 'YELLOW'] as const;
-  const types = ['NUMBERED', 'BLOCK', 'REVERSE', 'DRAW2', 'WILD', 'DRAW4'] as const;
-  const color = colors[Math.floor(Math.random() * colors.length)];
-  const type = types[Math.floor(Math.random() * types.length)];
-
-  if (type === 'NUMBERED') {
-    // Only assign a number if it's a numbered card
-    const number = Math.floor(Math.random() * 10);
-    return { type: 'NUMBERED', color, number };
-  } else {
-    // For non-numbered cards, no number is needed
-    return { type, color: type === 'WILD' || type === 'DRAW4' ? null : color }; // Wild and Draw4 cards have null color
+  if (deck.value) {
+    const newCard = deck.value.deal();
+    if (newCard) {
+      playerHand.value.push(newCard);  // Add the new card to the player's hand
+    } else {
+      alert('No more cards in the deck!');
+    }
   }
 };
-
-const sayUno = () => {
-  logAction('Player says UNO!');
-};
-
-// End turn and trigger bot's turn
-const endTurn = () => {
-  console.log('Player’s turn ended');
-  botTurn();
-};
-
-// Call this function to initialize the game with 7 cards each
-initializeHands();
 </script>
 
 <style scoped>
-/* Updated styles for better UI */
+/* Centered draw card button but moved slightly to the right */
+.draw-card-button {
+  position: absolute;
+  top: 50%;
+  left: 60%;  /* Adjust this value to move it left or right */
+  transform: translate(-50%, -50%);
+}
+
 .game-container {
   display: flex;
-  justify-content: space-around;
-  padding: 20px;
-  font-family: Arial, sans-serif;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  position: relative;
 }
 
-.player-hand, .discard-pile, .opponent-hand, .game-log {
-  padding: 10px;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  background-color: #f9f9f9;
-  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+.player-area, .bot-area.top.centered {
+  width: 60%;
+  margin: 0 auto;
   text-align: center;
-  width: 30%;
 }
 
-.card {
-  display: inline-block;
-  margin: 5px;
-  padding: 10px;
-  border: 1px solid #333;
-  border-radius: 5px;
-  background-color: #fff;
-  width: 100px;
+/* Player Area (Bottom) */
+.player-area {
+  position: absolute;
+  bottom: 20px;
+}
+
+/* Bot 1 (Top) */
+.bot-area.top.centered {
+  position: absolute;
+  top: 20px;
+}
+
+/* Bot 2 (Left, Vertical) */
+.bot-area.left {
+  position: absolute;
+  left: 20px;
+  top: 50%;
+  transform: translateY(-50%);
   text-align: center;
-  cursor: pointer;
-  box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-.action-button {
-  margin-top: 10px;
-  padding: 10px;
-  background-color: #4CAF50;
-  color: white;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
+/* Bot 3 (Right, Vertical) */
+.bot-area.right {
+  position: absolute;
+  right: 20px;
+  top: 50%;
+  transform: translateY(-50%);
+  text-align: center;
 }
 
-.action-button:hover {
-  background-color: #45a049;
+/* Discard Pile (Center) */
+.discard-pile {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
 }
-
-.game-log {
-  height: 200px;
-  overflow-y: auto;
-  text-align: left;
-}
-
-ul {
-  list-style-type: none;
-  padding: 0;
-}
-</style> -->
+</style>
