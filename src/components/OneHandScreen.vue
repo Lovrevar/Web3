@@ -38,16 +38,16 @@
 <script setup lang="ts">
 import { reactive } from 'vue';
 import { useRouter } from 'vue-router'; // Use this for navigation to game-over screen
-import type { Card } from '../interfaces/Deck';
+import type { ICard } from '../interfaces/IDeck';
 import { SimpleBot } from '../interfaces/botPlay';
 
 // Initialize router for navigation
 const router = useRouter();
 
 // Initialize playerHand, opponentHands, discardPile, and gameLog
-const playerHand = reactive<Card[]>([]);
-const opponentHand = reactive<Card[]>([]);
-const discardPile = reactive<Card[]>([{ type: 'NUMBERED', color: 'RED', number: 1 }]);
+const playerHand = reactive<ICard[]>([]);
+const opponentHand = reactive<ICard[]>([]);
+const discardPile = reactive<ICard[]>([{ type: 'NUMBERED', color: 'RED', number: 1 }]);
 const gameLog = reactive<string[]>([]); // Log of game actions
 const botHasDrawnCard = reactive({ value: false }); // Track if bot has drawn a card
 

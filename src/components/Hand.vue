@@ -7,8 +7,8 @@
   
   <script lang="ts">
   import { defineComponent } from 'vue';
-  import UNOCard from './UNOCard.vue';  // Import the UNOCard component
-  import { Card } from '../interfaces/Deck';  // Import the Card interface
+  import UNOCard from './UnoCard.vue';  // Import the UNOCard component
+  import type { ICard } from '../interfaces/IDeck';  // Import the Card interface
   
   export default defineComponent({
   name: 'Hand',
@@ -18,7 +18,7 @@
   props: {
     // Accept playerHand as a prop
     playerHand: {
-      type: Array as () => Card[],
+      type: Array as () => ICard[],
       required: true,
     },
   },
