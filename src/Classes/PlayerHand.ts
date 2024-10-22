@@ -1,0 +1,38 @@
+import type { ICard } from '../interfaces/IDeck';
+import type { IPlayerHand } from '../interfaces/IPlayerHand';
+export class PlayerHand implements IPlayerHand {
+    private cards: ICard[] = [];
+  
+    // Add a card to the hand
+    addCard(card: ICard): void {
+      this.cards.push(card);
+    }
+  
+    // Remove a card from the hand
+    removeCard(card: ICard): void {
+      const index = this.cards.findIndex(c => c === card);
+      if (index !== -1) {
+        this.cards.splice(index, 1);
+      }
+    }
+  
+    // Get all cards in the player's hand
+    getCards(): ICard[] {
+      return this.cards;
+    }
+  
+    // Check if the player can play a card based on the top card in the discard pile
+    getPlayableCard(topCard: ICard): ICard | undefined {
+      return this.cards.find(card => 
+        card.color === topCard.color || 
+        card.number === topCard.number || 
+        card.type === 'WILD' || 
+        card.type === 'DRAW4'
+      );
+    }
+  
+    // Check if the player has only one card left (for UNO call)
+    hasUno(): boolean {
+      return this.cards.length === 1;
+    }
+  }

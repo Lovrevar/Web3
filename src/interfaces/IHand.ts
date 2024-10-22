@@ -1,7 +1,8 @@
-import type { ICard } from './IDeck';
+import type { IPlayerHand } from './IPlayerHand';
+
 export interface IHand {
-  // Returns the current player's hand (array of cards)
-  playerHand(playerIndex: number): ICard[];
+  // Returns the current player's hand (PlayerHand instance)
+  playerHand(playerIndex: number): IPlayerHand;
 
   // Check if a player can play a card based on game rules
   canPlay(cardIndex: number): boolean;
