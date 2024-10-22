@@ -19,7 +19,7 @@ export class SimpleBot implements Bot {
         card.color === topCard.color || 
         card.number === topCard.number || 
         card.type === 'WILD' || 
-        card.type === 'WILD DRAW'
+        card.type === 'DRAW4'
       );
     });
 
@@ -39,11 +39,12 @@ export class SimpleBot implements Bot {
   }
 
   // Bot draws a card and adds it to its hand
-  drawCard() {
+  drawCard() : Card{
     // Simulate drawing a card (in reality, this should come from the deck)
     const newCard: Card = { type: 'NUMBERED', color: 'BLUE', number: Math.floor(Math.random() * 10) };
     this.hand.push(newCard);
     console.log('Bot drew a card');
+    return newCard;
   }
 
   // Check if the bot should say UNO

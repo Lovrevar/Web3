@@ -3,7 +3,8 @@
     <div class="player-hand">
       <h2>Your Hand</h2>
       <div v-for="(card, index) in playerHand" :key="index" class="card" @click="playCard(index)">
-        {{ card.color }} {{ card.number || card.type }}
+        <!-- {{ card.color }} {{ card.number || card.type }} -->
+        {{ card.color }} {{ card.type === 'NUMBERED' ? card.number : card.type }}
       </div>
       <button class="action-button" @click="drawCard">Draw Card</button>
       <button v-if="playerHand.length === 1" class="action-button" @click="sayUno">Say UNO!</button>
@@ -22,39 +23,41 @@
       <ul>
         <li v-for="(log, index) in gameLog" :key="index">{{ log }}</li>
       </ul>
-    </div>
 
-    <!-- Color selection for Draw 4 -->
-    <div v-if="draw4Active" class="color-selection">
-      <h3>Choose Color</h3>
-      <button v-for="color in colors" :key="color" @click="chooseColor(color)" class="color-button">{{ color }}</button>
+      <!-- Display bot's hand for debugging -->
+      <h3>Bot's Hand (Debug)</h3>
+      <ul>
+  <li v-for="(card, index) in opponentHand" :key="'bot-card-' + index">
+    {{ card.color }} {{ card.type === 'NUMBERED' ? card.number : card.type }}
+  </li>
+</ul> 
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { reactive } from 'vue';
+import { useRouter } from 'vue-router'; // Use this for navigation to game-over screen
 import type { Card } from '../interfaces/Deck';
 import { SimpleBot } from '../interfaces/botPlay';
 
-// Initialize playerHand, opponentHands, discardPile, gameLog, and other reactive data
+// Initialize router for navigation
+const router = useRouter();
+
+// Initialize playerHand, opponentHands, discardPile, and gameLog
 const playerHand = reactive<Card[]>([]);
 const opponentHand = reactive<Card[]>([]);
 const discardPile = reactive<Card[]>([{ type: 'NUMBERED', color: 'RED', number: 1 }]);
-const gameLog = reactive<string[]>([]);
-const draw4Active = reactive({ value: false }); // Tracks if Draw 4 color selection is active
-const botHasDrawnCard = reactive({ value: false });
-const skipNextTurn = reactive({ value: false }); // Track if next turn should be skipped
+const gameLog = reactive<string[]>([]); // Log of game actions
+const botHasDrawnCard = reactive({ value: false }); // Track if bot has drawn a card
 
-// Define available colors
-const colors = ['RED', 'BLUE', 'GREEN', 'YELLOW'] as const;
-
-// Function to initialize both player and bot hands with 7 cards
+// Initialize both player and bot hands with 7 cards at the start of the game
 const initializeHands = () => {
   for (let i = 0; i < 7; i++) {
     playerHand.push(generateRandomCard());
     opponentHand.push(generateRandomCard());
   }
+  logAction('Game started. Hands have been dealt.');
 };
 
 // Log the last action
@@ -65,33 +68,32 @@ const logAction = (message: string) => {
   }
 };
 
+// Function to check if the game should end
+const checkGameOver = () => {
+  if (playerHand.length === 0) {
+    logAction('Player wins the game!');
+    router.push('/game-over'); // Navigate to game over screen
+  } else if (opponentHand.length === 0) {
+    logAction('Bot wins the game!');
+    router.push('/game-over'); // Navigate to game over screen
+  }
+};
+
 // Function to handle player playing a card
 const playCard = (index: number) => {
   const selectedCard = playerHand[index];
   const topCard = discardPile[discardPile.length - 1];
 
   if (selectedCard.color === topCard.color || selectedCard.number === topCard.number || selectedCard.type === 'WILD' || selectedCard.type === 'DRAW4') {
-    discardPile.push(selectedCard);
-    playerHand.splice(index, 1);
-    logAction(`Player played ${selectedCard.color} ${selectedCard.number || selectedCard.type}`);
+    // Handle special rules for numbered cards (same number, different colors)
+    const sameNumberCards = playerHand.filter((card) => card.number === selectedCard.number);
+    sameNumberCards.forEach((card) => {
+      discardPile.push(card);
+      playerHand.splice(playerHand.indexOf(card), 1);
+      logAction(`Player played ${card.color} ${card.number || card.type}`);
+    });
 
-    // Handle Draw 2 and Draw 4 logic
-    if (selectedCard.type === 'DRAW2') {
-      logAction('Player played Draw 2');
-      botDrawCards(2);
-      skipNextTurn.value = true;
-      endTurn();
-      return;
-    }
-
-    if (selectedCard.type === 'DRAW4') {
-      logAction('Player played Draw 4');
-      draw4Active.value = true; // Activate color selection UI
-      botDrawCards(4);
-      skipNextTurn.value = true;
-      return;
-    }
-
+    checkGameOver(); // Check if the game should end after playing the card
     endTurn();
   } else {
     console.log('You cannot play this card');
@@ -102,117 +104,91 @@ const playCard = (index: number) => {
 const bot = new SimpleBot(opponentHand);
 
 const botTurn = () => {
-  if (skipNextTurn.value) {
-    logAction('Bot skipped turn');
-    skipNextTurn.value = false; // Reset skip flag
-    return;
-  }
-
-  // Handle Draw 4 color selection for bot
-  if (draw4Active.value) {
-    autoChooseColorForBot();
-    return;
-  }
-
-  // Bot plays card if available
+  // Check if bot has drawn a card last turn and try to play it
   if (botHasDrawnCard.value) {
     const botCard = bot.playCard(discardPile);
     if (botCard) {
       discardPile.push(botCard);
+      opponentHand.splice(opponentHand.indexOf(botCard), 1); // Remove the played card from bot's hand
       logAction(`Bot played ${botCard.color} ${botCard.number || botCard.type}`);
-      botHasDrawnCard.value = false;
-
-      // Handle Draw 2 and Draw 4 logic for player
-      if (botCard.type === 'DRAW2') {
-        logAction('Bot played Draw 2');
-        playerDrawCards(2);
-        skipNextTurn.value = true;
-        return;
-      }
-
-      if (botCard.type === 'DRAW4') {
-        logAction('Bot played Draw 4');
-        autoChooseColorForBot();
-        playerDrawCards(4);
-        skipNextTurn.value = true;
-        return;
-      }
+      botHasDrawnCard.value = false; // Reset flag after playing the drawn card
+      checkGameOver(); // Check if the game should end after the bot's play
+    } else {
+      console.log('Bot cannot play the drawn card');
     }
   } else {
+    // Bot tries to play a card from its hand
     const botCard = bot.playCard(discardPile);
     if (botCard) {
       discardPile.push(botCard);
+      opponentHand.splice(opponentHand.indexOf(botCard), 1); // Remove the played card from bot's hand
       logAction(`Bot played ${botCard.color} ${botCard.number || botCard.type}`);
+      checkGameOver(); // Check if the game should end after the bot's play
     } else {
+      // Bot draws a card if it cannot play
       console.log('Bot draws a card');
-      bot.drawCard();
-      botHasDrawnCard.value = true;
-      logAction('Bot drew a card');
+      const newCard = bot.drawCard(); // Ensure drawCard returns a valid Card object
+      if (newCard) {
+        opponentHand.push(newCard); // Add the card to bot's hand
+        // botHasDrawnCard.value = true; // Bot has drawn a card and will try to play it next turn
+        logAction('Bot drew a card');
+      } else {
+        console.log('Error: Bot could not draw a card');
+      }
     }
   }
+
+  // If the bot has 1 card left, it says UNO
+  if (opponentHand.length === 1) {
+    logAction('Bot says UNO!');
+  }
 };
+
+  // If the bot has 1 card left, it says UNO
+  if (opponentHand.length === 1) {
+    logAction('Bot says UNO!');
+  };
 
 // Draw card for the player
 const drawCard = () => {
   const newCard = generateRandomCard();
   playerHand.push(newCard);
-  logAction(`Player drew a ${newCard.color} ${newCard.number || newCard.type}`);
-  endTurn();
+  if (newCard.type=='NUMBERED') 
+  {
+    logAction(`Player drew a ${newCard.color} ${newCard.number}`);
+  }
+  else
+  logAction(`Player drew a ${newCard.color} ${newCard.type}`);
+  
+  checkGameOver(); // Check if the game should end after drawing the card
+  endTurn(); // Drawing a card ends the player's turn
 };
 
 // Generate a random card
 const generateRandomCard = (): Card => {
+  const colors = ['RED', 'BLUE', 'GREEN', 'YELLOW'] as const;
   const types = ['NUMBERED', 'BLOCK', 'REVERSE', 'DRAW2', 'WILD', 'DRAW4'] as const;
   const color = colors[Math.floor(Math.random() * colors.length)];
   const type = types[Math.floor(Math.random() * types.length)];
 
   if (type === 'NUMBERED') {
-    return { type: 'NUMBERED', color, number: Math.floor(Math.random() * 10) };
+    // Only assign a number if it's a numbered card
+    const number = Math.floor(Math.random() * 10);
+    return { type: 'NUMBERED', color, number };
   } else {
-    return { type, color: type === 'WILD' || type === 'DRAW4' ? null : color }; // Wild cards have null color
+    // For non-numbered cards, no number is needed
+    return { type, color: type === 'WILD' || type === 'DRAW4' ? null : color }; // Wild and Draw4 cards have null color
   }
 };
 
-// Function to choose a color for Draw 4
-const chooseColor = (color: typeof colors[number]) => {
-  discardPile.push({ type: 'DRAW4', color, number: undefined });
-  logAction(`Player chose ${color} for Draw 4`);
-  draw4Active.value = false; // Deactivate color selection UI
-  endTurn(); // Player's turn ends after color selection
+const sayUno = () => {
+  logAction('Player says UNO!');
 };
 
-// Bot auto chooses color for Draw 4 based on its hand
-const autoChooseColorForBot = () => {
-  const colorCounts = { RED: 0, BLUE: 0, GREEN: 0, YELLOW: 0 };
-
-  // Count the number of cards of each color in bot's hand
-  opponentHand.forEach((card) => {
-    if (card.color) colorCounts[card.color]++;
-  });
-
-  // Choose the color with the most cards
-  const chosenColor = Object.keys(colorCounts).reduce((a, b) => colorCounts[a] > colorCounts[b] ? a : b);
-  discardPile.push({ type: 'DRAW4', color: chosenColor as 'RED' | 'BLUE' | 'GREEN' | 'YELLOW', number: undefined });
-  logAction(`Bot chose ${chosenColor} for Draw 4`);
-  draw4Active.value = false;
-  endTurn();
-};
-
-// Make the bot draw cards
-const botDrawCards = (count: number) => {
-  for (let i = 0; i < count; i++) {
-    bot.drawCard();
-  }
-  logAction(`Bot drew ${count} cards`);
-};
-
-// Make the player draw cards
-const playerDrawCards = (count: number) => {
-  for (let i = 0; i < count; i++) {
-    const newCard = generateRandomCard();
-    playerHand.push(newCard);
-  }
-  logAction(`Player drew ${count} cards`);
+// End turn and trigger bot's turn
+const endTurn = () => {
+  console.log('Player’s turn ended');
+  botTurn();
 };
 
 // Call this function to initialize the game with 7 cards each
@@ -220,6 +196,7 @@ initializeHands();
 </script>
 
 <style scoped>
+/* Updated styles for better UI */
 .game-container {
   display: flex;
   justify-content: space-around;
@@ -273,22 +250,5 @@ initializeHands();
 ul {
   list-style-type: none;
   padding: 0;
-}
-
-.color-selection {
-  text-align: center;
-}
-
-.color-button {
-  margin: 5px;
-  padding: 10px;
-  background-color: #f0f0f0;
-  border: 1px solid #ccc;
-  border-radius: 5px;
-  cursor: pointer;
-}
-
-.color-button:hover {
-  background-color: #ddd;
 }
 </style>
