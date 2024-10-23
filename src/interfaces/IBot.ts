@@ -6,13 +6,13 @@ export interface IBot {
   hand: ICard[];
 
   // The bot makes a play based on the current discard pile
-  playCard(discardPile: ICard[]): ICard | null;
+  playCard(discardPile: ICard[],botNumber: number): ICard | null;
 
   // The bot draws a card (you can implement the draw logic separately)
-  drawCard(newCard: ICard): void;
+  drawCard(newCard: ICard, botNumber: number): void;
   // Check if the bot has forgotten to say UNO (if it has only one card left)
   shouldSayUno(): boolean;
 
   // Bot announces UNO
-  sayUno(): void;
+  sayUno(botNumber: number): void;
 }

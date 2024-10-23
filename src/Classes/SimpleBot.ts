@@ -1,58 +1,43 @@
-import type { ICard } from '../interfaces/IDeck'; // Import the Card interface
-import type { IBot } from '../interfaces/IBot';  // Import the Bot interface
+import type { ICard } from '../interfaces/IDeck';
+import type { IBot } from '../interfaces/IBot';
 
-// Example implementation of the Bot interface
 export class SimpleBot implements IBot {
   hand: ICard[];
+  name: string;
 
-  constructor(initialHand: ICard[]) {
+  constructor(initialHand: ICard[], name: string) {
     this.hand = initialHand;
+    this.name = name;  // Store bot's name
   }
 
-  // Bot decides which card to play
   playCard(discardPile: ICard[]): ICard | null {
     const topCard = discardPile[discardPile.length - 1];
-
-    // Find all cards in the bot's hand that can be legally played
-    const legalPlays = this.hand.filter((card) => {
-      return (
-        card.color === topCard.color || 
-        card.number === topCard.number || 
-        card.type === 'WILD' || 
-        card.type === 'DRAW4'
-      );
-    });
+    const legalPlays = this.hand.filter(card => (
+      card.color === topCard.color || 
+      card.number === topCard.number || 
+      card.type === 'WILD' || 
+      card.type === 'DRAW4'
+    ));
 
     if (legalPlays.length > 0) {
-      // Choose a random legal card to play
       const chosenCard = legalPlays[Math.floor(Math.random() * legalPlays.length)];
-
-      // Remove the card from the bot's hand
       this.hand = this.hand.filter(card => card !== chosenCard);
-      console.log(`Bot plays: ${chosenCard.color} ${chosenCard.number || chosenCard.type}`);
+      console.log(`${this.name} played: ${chosenCard.color} ${chosenCard.number || chosenCard.type}`);
       return chosenCard;
     }
-
-    // If no legal play, bot draws a card
-    console.log('Bot draws a card');
     return null;
   }
 
-  // Bot draws a card and adds it to its hand
   drawCard(newCard: ICard): void {
     this.hand.push(newCard);
-    console.log('Bot drew a card');
+    console.log(`${this.name} drew a card`);
   }
 
-  // Check if the bot should say UNO
   shouldSayUno(): boolean {
     return this.hand.length === 1;
   }
 
-  // Bot says UNO if it has only one card
   sayUno() {
-    if (this.shouldSayUno()) {
-      console.log('Bot says UNO!');
-    }
+    console.log(`${this.name} says UNO!`);
   }
 }
