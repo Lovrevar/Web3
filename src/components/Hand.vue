@@ -5,6 +5,8 @@
       v-for="(card, index) in playerHand" 
       :key="index" 
       :card="card" 
+      :isVertical= "isVertical"
+      :isBotCard= "isBotCard" 
       @click="() => playCard(index)" 
     />
   </div>
@@ -32,7 +34,11 @@ export default defineComponent({
     playCard: {
       type: Function,
       required: true,  // Ensure the playCard method is passed in
-    }
+    },
+    isBotCard: {
+        type: Boolean,
+        default: false,
+    },
   },
 });
 </script>

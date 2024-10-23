@@ -9,15 +9,15 @@
     <!-- Bot Areas -->
     <div v-if="numberOfBots >= 1" class="bot-area top centered">
       <h2>{{ botNames[0] }}</h2>
-      <Hand :playerHand="botHands[0]" />
+      <Hand :playerHand="botHands[0]"  :isBotCard="true"/>
     </div>
     <div v-if="numberOfBots >= 2" class="bot-area left">
       <h2>{{ botNames[1] }}</h2>
-      <Hand :playerHand="botHands[1]" :isVertical="true" />
+      <Hand :playerHand="botHands[1]" :isVertical="true" :isBotCard="true"/>
     </div>
     <div v-if="numberOfBots >= 3" class="bot-area right">
       <h2>{{ botNames[2] }}</h2>
-      <Hand :playerHand="botHands[2]" :isVertical="true" />
+      <Hand :playerHand="botHands[2]" :isVertical="true" :isBotCard="true"/>
     </div>
 
     <!-- Discard Pile (Center) -->

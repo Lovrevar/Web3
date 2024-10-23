@@ -1,5 +1,6 @@
 <template>
-    <div :class="['card', cardColorClass]">
+  <div>
+    <div :class="['card', cardColorClass, isVertical ? 'rotated-card' : '']"  v-if="!isBotCard">
       <!-- Ellipse -->
       <div class="ellipse"></div>
   
@@ -48,6 +49,10 @@
 </div>
       <div v-if="isWildDrawCard" class="corner-content bottom-right"><span class="plus-symbol small">+</span>4</div>
     </div>
+    <div v-if="isBotCard" :class="['card-back', isVertical ? 'rotated-card' : '']">
+    <img src="@/assets/uno-back.png" alt="UNO Back" class="card-back-image" />
+  </div>
+    </div>
   </template>
   
   
@@ -64,6 +69,14 @@ export default defineComponent({
     card: {
       type: Object as () => ICard,
       required: true,
+    },
+    isBotCard: {
+      type: Boolean,
+      default: false, // Add this prop to differentiate bot cards from player cards
+    },
+    isVertical: {
+      type: Boolean,
+      default: false, // Add this prop to control card rotation
     },
   },
   computed: {
@@ -95,19 +108,27 @@ export default defineComponent({
 
 <style scoped>
 /* Card base styles */ 
-.card {
+.card, .card-back {
   width: 100px;
   height: 160px;
   border-radius: 16px;
   display: inline-block;
   position: relative;
-  font-family: 'Tahoma';
-  text-align: center;
-  font-weight: bold;
-  font-size: 32px;
   border: 2px solid white;
   margin: 10px;
-  overflow: hidden;
+  box-sizing: border-box; /* Ensures borders are counted in the width and height */
+}
+
+.card-back-image {
+  width: 110%;
+  height: 120%;
+  object-fit: cover; /* Ensures the image fills the entire div */
+  border-radius: 16px; /* Keeps the rounded corners */
+}
+
+.rotated-card {
+  transform: rotate(90deg); /* Rotate the card for side bots */
+  transform-origin: center center;
 }
 
 .red { background-color: #C11F1F; }
@@ -279,4 +300,11 @@ export default defineComponent({
   left: 50%;
   transform: translate(-50%, -50%) skewX(-25deg); /* Center the large oval */
 }
+
+.rotated-card  {
+    margin-bottom: -20px;
+    transform: rotate(90deg);
+    transform-origin: center center;
+  }
+
 </style>
