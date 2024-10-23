@@ -2,22 +2,22 @@
   <div class="game-container">
     <!-- Player Area (Bottom) -->
     <div class="player-area">
-      <h2>Player 1 (You)</h2>
+      <h2>{{playerName}}</h2>
       <Hand :playerHand="playerHand" :playCard="playCard" />
     </div>
 
     <!-- Bot Areas -->
     <div v-if="numberOfBots >= 1" class="bot-area top centered">
       <h2>{{ botNames[0] }}</h2>
-      <Hand :playerHand="botHands[0]"  :isBotCard="true"/>
+      <Hand :playerHand="botHands[0]" :isBotCard="true" />
     </div>
     <div v-if="numberOfBots >= 2" class="bot-area left">
       <h2>{{ botNames[1] }}</h2>
-      <Hand :playerHand="botHands[1]" :isVertical="true" :isBotCard="true"/>
+      <Hand :playerHand="botHands[1]" :isVertical="true" :isBotCard="true" />
     </div>
     <div v-if="numberOfBots >= 3" class="bot-area right">
       <h2>{{ botNames[2] }}</h2>
-      <Hand :playerHand="botHands[2]" :isVertical="true" :isBotCard="true"/>
+      <Hand :playerHand="botHands[2]" :isVertical="true" :isBotCard="true" />
     </div>
 
     <!-- Discard Pile (Center) -->
@@ -58,6 +58,8 @@ const bots = ref<SimpleBot[]>([]);
 
 // Names for bots
 const botNames = ref<string[]>(["Benjamin", "David", "Lovre"]);
+  const botNamesPerm = ref<string[]>(["Benjamin", "David", "Lovre"]);
+const playerName = ref('Me');
 
 // Track if the bot has said UNO
 const botSaidUno = ref<boolean[]>([false, false, false]);
@@ -121,43 +123,70 @@ const drawCard = () => {
 };
 
 const nextTurn = () => {
+  // Loop through each bot and let them play their turn
   bots.value.forEach((bot, index) => {
     if (gameOver.value) return;
 
-    
-
     const card = bot.playCard(discardPile.value);
     if (card) {
-      discardPile.value.push(card);
-      botHands.value[index] = botHands.value[index].filter(c => c !== card);
+      discardPile.value.push(card);  // Add the bot's played card to the discard pile
+      botHands.value[index] = botHands.value[index].filter(c => c !== card);  // Remove the card from the bot's hand
 
-      // If bot has exactly 1 card, it says UNO
+      // If the bot has exactly 1 card, it should say UNO
       if (botHands.value[index].length === 1 && !botSaidUno.value[index]) {
         botNames.value[index] = `${bot.name} says UNO`;
-        botSaidUno.value[index] = true;
         bot.sayUno();
-      } 
-      // If bot has no cards, the game is over
+      }
+      // If the bot has no cards, the game is over
       else if (botHands.value[index].length === 0) {
+        for(let i = 0; i < numberOfBots; i++)
+      {
+        botNames.value[i]=botNamesPerm.value[i];
+        console.log(botNames.value[i]);
+      }
         gameOver.value = true;
-        botNames.value[index] = `${bot.name} wins!`;
-        game.updateScores();
-        game.logRemainingCards(playerHand.value, botHands.value, botNames.value);  // Pass the botNames array here
+        
+        botNames.value[index] = `${bot.name}`;
         alert(`${bot.name} wins!`);
+        // Calculate final points and update names
+        game.calculateFinalPoints(playerHand.value, botHands.value, playerName, botNames.value);
+
+        
       }
     } else {
+      // If the bot cannot play, it draws a card
       const newCard = deck.value?.deal();
       if (newCard) {
         bot.drawCard(newCard);
-        botHands.value[index].push(newCard);
+        botNames.value[index] = `${bot.name}`;
+        botHands.value[index].push(newCard);  // Add the drawn card to the bot's hand
       }
     }
-    // Check if bot has previously said UNO but now has more than 1 card
-    if (botSaidUno.value[index] && botHands.value[index].length !== 1) {
-      botNames.value[index] = `${bot.name}`;
-      botSaidUno.value[index] = false;
-    }
+
+    // Reset the bot's UNO announcement if they now have more than 1 card
+    // if (botSaidUno.value[index] && botHands.value[index].length !== 1) {
+    //   botNames.value[index] = `${bot.name}`;
+    //   botSaidUno.value[index] = false;
+    // }
   });
+
+  // Check if it's the player's turn after the bots finish
+  if (!gameOver.value) {
+    const playerTurn = playerHand.value.length === 1;
+    if (playerTurn && !botSaidUno.value[0]) {
+      playerName.value = `${playerName.value} says UNO`;
+    }
+
+    if (playerHand.value.length === 0) {
+      gameOver.value = true;
+      playerName.value = `${playerName.value} wins!`;
+
+      // Calculate final points and update names
+      game.calculateFinalPoints(playerHand.value, botHands.value, playerName, botNames.value);
+
+      alert(`${playerName.value}  kurac wins!`);
+    }
+  }
 };
 
 

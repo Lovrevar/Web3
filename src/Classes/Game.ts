@@ -72,31 +72,27 @@ export class Game {
   }
 
   // Bot takes their turn
-playBotTurns(botSaidUno: boolean[], botNames: string[]): void {
-  this.bots.forEach((bot, index) => {
-    // Pass the bot number (index) as the second argument
-    const card = bot.playCard(this.discardPile);
+  playBotTurns(botSaidUno: boolean[], botNames: string[]): void {
+    this.bots.forEach((bot, index) => {
+      const card = bot.playCard(this.discardPile);
 
-    if (card) {
-      // Bot plays a card
-      this.discardPile.push(card);
+      if (card) {
+        this.discardPile.push(card);
 
-      if (bot.hand.length === 1 && !botSaidUno[index]) {
-        botNames[index] = `Bot ${index + 1} says UNO`;
-        botSaidUno[index] = true;
-      } else if (bot.hand.length === 0) {
-        botNames[index] = `Bot ${index + 1} wins!`;
-        this.gameOver = true;
+        if (bot.hand.length === 1 && !botSaidUno[index]) {
+          botNames[index] = `Bot ${index + 1} says UNO`;
+          botSaidUno[index] = true;
+        } else if (bot.hand.length === 0) {
+          this.gameOver = true;
+        }
+      } else {
+        const newCard = this.deck.deal();
+        if (newCard) {
+          bot.drawCard(newCard);
+        }
       }
-    } else {
-      // Bot draws a card
-      const newCard = this.deck.deal();
-      if (newCard) {
-        bot.drawCard(newCard);
-      }
-    }
-  });
-}
+    });
+  }
 
   // Update the scores based on cards left in hands
   public updateScores(): void {
@@ -170,42 +166,66 @@ playBotTurns(botSaidUno: boolean[], botNames: string[]): void {
     this.currentPlayerIndex = 0;
   }
 
-  public logRemainingCards(playerHand: ICard[], botHands: ICard[][], botNames: string[]): void {
-    console.log("Remaining cards at the end of the game:");
-  
-    // Helper function to display card details
+  public calculateFinalPoints(playerHand: ICard[], botHands: ICard[][], playerName: any, botNames: string[]): void {
     const formatCard = (card: ICard) => {
-      if (card.type === 'NUMBERED') {
-        return `${card.color}${card.number}`;  // Display color and number for numbered cards
-      } else {
-        return `${card.color}${card.type}`;    // Display color and type for special cards
-      }
-    };
-  
-    // Helper function to calculate points for each player's or bot's hand
-    const calculatePoints = (hand: ICard[]): number => {
-      return hand.reduce((totalPoints, card) => {
         if (card.type === 'NUMBERED') {
-          return totalPoints + (card.number || 0);  // Add the card's number for numbered cards
-        } else if (['BLOCK', 'REVERSE', 'DRAW2'].includes(card.type)) {
-          return totalPoints + 20;  // 20 points for Block, Reverse, and Draw Two cards
-        } else if (['WILD', 'DRAW4'].includes(card.type)) {
-          return totalPoints + 50;  // 50 points for Wild and Draw Four cards
+            return `${card.color}${card.number}`;
+        } else {
+            return `${card.color}${card.type}`;
         }
-        return totalPoints;
-      }, 0);
     };
-  
-    // Log player's cards and points at the end
+
+    const calculatePoints = (hand: ICard[]): number => {
+        return hand.reduce((totalPoints, card) => {
+            if (card.type === 'NUMBERED') {
+                return totalPoints + (card.number || 0);
+            } else if (['BLOCK', 'REVERSE', 'DRAW2'].includes(card.type)) {
+                return totalPoints + 20;
+            } else if (['WILD', 'DRAW4'].includes(card.type)) {
+                return totalPoints + 50;
+            }
+            return totalPoints;
+        }, 0);
+    };
+
     const playerPoints = calculatePoints(playerHand);
-    console.log(`Player 1 cards: ${playerHand.map(formatCard).join(', ')} and they had ${playerPoints} points.`);
-  
-    // Log each bot's cards and points at the end
-    botHands.forEach((botHand, index) => {
-      const botPoints = calculatePoints(botHand);
-      console.log(`${botNames[index]} cards: ${botHand.map(formatCard).join(', ')} and they had ${botPoints} points.`);
+    let totalPoints = playerPoints;
+
+    // Calculate bot points and add to total
+    botHands.forEach((botHand) => {
+        totalPoints += calculatePoints(botHand);
     });
-  }
-  
-  
+
+    let winnerIndex: number | null = null;
+
+    // Check if the player is the winner
+    if (playerHand.length === 0) {
+        winnerIndex = 0; // Player is the winner
+    } else {
+        // Check if any bot is the winner
+        botHands.forEach((botHand, index) => {
+            if (botHand.length === 0) {
+                winnerIndex = index + 1; // Bot's index is +1 due to the player's position
+            }
+        });
+    }
+    
+    
+    
+    //Update the points for the player and bots
+    playerName.value = `I finished with ${playerPoints} points`;
+    botHands.forEach((botHand, index) => {
+      if((winnerIndex-1)!=index)
+      {
+        const botPoints = calculatePoints(botHand);
+        botNames[index] = `${botNames[index]} finished with ${botPoints} points`;
+      }
+    });
+    // Update the winner's name
+    if (winnerIndex === 0) {
+        playerName.value = `I won and gained ${totalPoints} points`;
+    } else if (winnerIndex && winnerIndex > 0) {
+        botNames[winnerIndex - 1] = `${botNames[winnerIndex - 1]} won and gained ${totalPoints} points`;
+    }
+}
 }
