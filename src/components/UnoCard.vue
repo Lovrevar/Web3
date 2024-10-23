@@ -85,14 +85,24 @@ export default defineComponent({
 
 <style scoped>
 /* Card base styles */ 
-.card, .card-back {
+.card {
   width: 100px;
   height: 160px;
   border-radius: 16px;
   display: inline-block;
   position: relative;
-  border: 2px solid white;
+  border: 10px solid white;
   margin: 10px;
+  box-sizing: border-box; /* Ensures borders are counted in the width and height */
+}
+
+.card-back {
+  width: 100px;
+  height: 160px;
+  border-radius: 16px;
+  display: inline-block;
+  position: relative;
+  
   box-sizing: border-box; /* Ensures borders are counted in the width and height */
 }
 
@@ -116,49 +126,37 @@ export default defineComponent({
 
 /* Ellipse */
 .ellipse {
-  background-color: white;
+  background-color: transparent; /* Make the ellipse background transparent */
   width: 80%;
   height: 65%;
   border-radius: 50%;
   margin: auto;
   transform: skewX(-25deg);
   position: absolute;
-  top: 15%;
-  left: 10%;
+  top: 10%;
+  border: 10px solid white; /* Add a white outline */
 }
 
-/* Center symbol (Large content) - Matches card color */
+/* Large centered content (numbers) */
 .large-content {
   position: absolute;
-  top: 45%;
+  top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
   font-size: 56px;
+  color: white; /* Make the number in the center white */
+  font-weight: bold; /* Make the numbers bolder */
+  font-family: 'Arial', sans-serif; /* You can choose a different font */
 }
 
-/* Set the middle symbol color based on the card's color */
-.red .large-content {
-  color: #C11F1F;
-}
-
-.green .large-content {
-  color: #3E9E32;
-}
-
-.blue .large-content {
-  color: #3F4CFF;
-}
-
-.yellow .large-content {
-  color: #DED71F;
-}
 
 /* Corner symbols (Small corner content) - Always white */
 .corner-content {
   position: absolute;
-  font-size: 20px;
+  font-size: 22px; /* Slightly increase the font size for the corner content */
   font-weight: bold;
   color: white; /* Make the corner content white */
+  font-family: 'Arial', sans-serif; /* You can adjust this as per preference */
 }
 
 .top-left {
@@ -171,7 +169,6 @@ export default defineComponent({
   bottom: 5px;
   transform: rotate(180deg);
 }
-
 .segment {
   width: 45%;
   height: 45%;
