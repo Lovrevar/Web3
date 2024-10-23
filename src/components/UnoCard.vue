@@ -1,22 +1,15 @@
 <template>
   <div>
-    <div :class="['card', cardColorClass, isVertical ? 'rotated-card' : '']"  v-if="!isBotCard">
+    <div :class="['card', cardColorClass, isVertical ? 'rotated-card' : '', !isBotCard ? 'hover-effect' : '']"  v-if="!isBotCard">
       <!-- Ellipse -->
-      <div class="ellipse"></div>
+    <div v-if="isWildCard"><img src="@/assets/WildCard.jpg" alt="wild" class="card-back-image" /></div>
+      <div class="ellipse" v-if="!isWildCard"></div>
   
       <!-- Large centered content with the card color applied directly -->
       <div v-if="isNumberCard" class="large-content">{{ card.number }}</div>
       <div v-if="isSkipCard" class="large-content">⦸</div>
       <div v-if="isReverseCard" class="large-content">↻</div>
       <div v-if="isDrawCard" class="large-content"><span class="plus-symbol">+</span>2</div>
-      <div v-if="isWildCard" class="wild-content">
-  <div class="wild-oval large">
-    <div class="wild-segment yellow"></div>
-    <div class="wild-segment green"></div>
-    <div class="wild-segment blue"></div>
-    <div class="wild-segment red"></div>
-  </div>
-</div>
       <div v-if="isWildDrawCard" class="large-content"><span class="plus-symbol">+</span>4</div>
   
       <!-- Small upper-left corner content with card color applied directly -->
@@ -24,14 +17,6 @@
       <div v-if="isSkipCard" class="corner-content top-left">⦸</div>
       <div v-if="isReverseCard" class="corner-content top-left">↻</div>
       <div v-if="isDrawCard" class="corner-content top-left"><span class="plus-symbol small">+</span>2</div>
-      <div v-if="isWildCard" class="corner-wild-content top-left">
-  <div class="wild-oval">
-    <div class="wild-segment yellow"></div>
-    <div class="wild-segment green"></div>
-    <div class="wild-segment blue"></div>
-    <div class="wild-segment red"></div>
-  </div>
-</div>
       <div v-if="isWildDrawCard" class="corner-content top-left"><span class="plus-symbol small">+</span>4</div>
   
       <!-- Small bottom-right corner content with card color applied directly -->
@@ -39,14 +24,6 @@
       <div v-if="isSkipCard" class="corner-content bottom-right">⦸</div>
       <div v-if="isReverseCard" class="corner-content bottom-right">↻</div>
       <div v-if="isDrawCard" class="corner-content bottom-right"><span class="plus-symbol small">+</span>2</div>
-      <div v-if="isWildCard" class="corner-wild-content bottom-right">
-  <div class="wild-oval">   
-    <div class="wild-segment yellow"></div>
-    <div class="wild-segment green"></div>
-    <div class="wild-segment blue"></div>
-    <div class="wild-segment red"></div>
-  </div>
-</div>
       <div v-if="isWildDrawCard" class="corner-content bottom-right"><span class="plus-symbol small">+</span>4</div>
     </div>
     <div v-if="isBotCard" :class="['card-back', isVertical ? 'rotated-card' : '']">
@@ -120,8 +97,8 @@ export default defineComponent({
 }
 
 .card-back-image {
-  width: 110%;
-  height: 120%;
+  width: 100%;
+  height: 100%;
   object-fit: cover; /* Ensures the image fills the entire div */
   border-radius: 16px; /* Keeps the rounded corners */
 }
@@ -195,32 +172,9 @@ export default defineComponent({
   transform: rotate(180deg);
 }
 
-/* Wild card specific changes */
-.wild-content {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  width: 70%;
-  height: 70%;
-  position: absolute;
-  top: 20%;
-  left: 15%;
-}
-
 .segment {
   width: 45%;
   height: 45%;
-  border-radius: 50%;
-}
-
-.corner-wild-content {
-  position: absolute;
-  top: 5px;
-  left: 10px;
-  width: 20px;
-  height: 20px;
-  background: linear-gradient(to bottom right, red 50%, blue 50%), linear-gradient(to top right, yellow 50%, green 50%);
-  background-size: 100% 100%;
   border-radius: 50%;
 }
 
@@ -232,25 +186,7 @@ export default defineComponent({
 .plus-symbol.small {
   font-size: 14px; /* Smaller font size for + in corners */
 }
-
-/* Wild card specific changes */
-    .wild-oval {
-    position: relative;
-    width: 20px;
-    height: 30px;
-    border-radius: 50%; /* Oval shape */
-    overflow: hidden;
-    transform: skewX(-25deg); /* Optional: Adds a skew for a slanted appearance */
-    border: 1px solid white; /* Thin white border for a cleaner look */
-    }
-
-    /* Each segment is half of the oval */
-    .wild-segment {
-    position: absolute;
-    width: 50%;
-    height: 50%;
-    }
-
+ 
     .yellow {
     background-color: yellow;
     top: 0;
@@ -292,19 +228,25 @@ export default defineComponent({
     bottom: 5px;
     transform: rotate(180deg); /* Inverts for the opposite corner */
     }
-    .wild-oval.large {
-  width: 80px;
-  height: 120px;
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%) skewX(-25deg); /* Center the large oval */
-}
+
 
 .rotated-card  {
     margin-bottom: -20px;
     transform: rotate(90deg);
     transform-origin: center center;
   }
+
+.hover-effect {
+  border-radius: 10px;
+  transition: all 0.3s ease; /* Smooth transition */
+}
+
+/* Hover effect */
+.hover-effect:hover {
+  width: 120px; /* Slightly increase the size */
+  height: 192px; /* Slightly increase the size */
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2); /* Add shadow */
+}
+
 
 </style>
