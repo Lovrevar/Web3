@@ -2,20 +2,37 @@
   <div class="game-container">
     <!-- Player Area (Bottom) -->
     <div class="player-area">
-      <h2>{{playerName}}</h2>
+      <h2>{{ playerName }}</h2>
       <Hand :playerHand="playerHand" :playCard="playCard" />
     </div>
 
     <!-- Bot Areas -->
-    <div v-if="numberOfBots >= 1" class="bot-area top centered">
-      <h2>{{ botNames[1] }}</h2>
+    <!-- For 1 Bot: Place on Top -->
+    <div v-if="numberOfBots === 1" class="bot-area top centered">
+      <h2>{{ botNames[0] }}</h2>
       <Hand :playerHand="botHands[0]" :isBotCard="true" />
     </div>
-    <div v-if="numberOfBots >= 2" class="bot-area left">
+
+    <!-- For 2 Bots: Place First Bot on Left, Second Bot on Top -->
+    <div v-if="numberOfBots === 2" class="bot-area left">
       <h2>{{ botNames[0] }}</h2>
-      <Hand :playerHand="botHands[1]" :isVertical="true" :isBotCard="true" />
+      <Hand :playerHand="botHands[0]" :isVertical="true" :isBotCard="true" />
     </div>
-    <div v-if="numberOfBots >= 3" class="bot-area right">
+    <div v-if="numberOfBots === 2" class="bot-area top centered">
+      <h2>{{ botNames[1] }}</h2>
+      <Hand :playerHand="botHands[1]" :isBotCard="true" />
+    </div>
+
+    <!-- For 3 Bots: Place First Bot on Left, Second Bot on Top, Third Bot on Right -->
+    <div v-if="numberOfBots === 3" class="bot-area left">
+      <h2>{{ botNames[0] }}</h2>
+      <Hand :playerHand="botHands[0]" :isVertical="true" :isBotCard="true" />
+    </div>
+    <div v-if="numberOfBots === 3" class="bot-area top centered">
+      <h2>{{ botNames[1] }}</h2>
+      <Hand :playerHand="botHands[1]" :isBotCard="true" />
+    </div>
+    <div v-if="numberOfBots === 3" class="bot-area right">
       <h2>{{ botNames[2] }}</h2>
       <Hand :playerHand="botHands[2]" :isVertical="true" :isBotCard="true" />
     </div>
@@ -31,6 +48,7 @@
     </div>
   </div>
 </template>
+
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
