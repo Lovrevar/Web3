@@ -25,7 +25,7 @@ export default defineComponent({
   props: {
     playerHand: {
       type: Array as () => ICard[],
-      required: true,
+      required: false,
     },
     isVertical: {
       type: Boolean,
@@ -33,7 +33,7 @@ export default defineComponent({
     },
     playCard: {
       type: Function,
-      required: true,  // Ensure the playCard method is passed in
+      required: false,  // Ensure the playCard method is passed in
     },
     isBotCard: {
         type: Boolean,

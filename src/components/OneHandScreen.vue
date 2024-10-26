@@ -8,11 +8,11 @@
 
     <!-- Bot Areas -->
     <div v-if="numberOfBots >= 1" class="bot-area top centered">
-      <h2>{{ botNames[0] }}</h2>
+      <h2>{{ botNames[1] }}</h2>
       <Hand :playerHand="botHands[0]" :isBotCard="true" />
     </div>
     <div v-if="numberOfBots >= 2" class="bot-area left">
-      <h2>{{ botNames[1] }}</h2>
+      <h2>{{ botNames[0] }}</h2>
       <Hand :playerHand="botHands[1]" :isVertical="true" :isBotCard="true" />
     </div>
     <div v-if="numberOfBots >= 3" class="bot-area right">
@@ -103,10 +103,12 @@ const playCard = (index: number) => {
   if (cardToPlay.color === topCard.color || cardToPlay.number === topCard.number || ['WILD', 'DRAW4'].includes(cardToPlay.type)) {
     discardPile.value.push(cardToPlay);
     playerHand.value.splice(index, 1);
+    console.log(`I played ${cardToPlay.color} ${cardToPlay.number || cardToPlay.type}`);
     nextTurn();
   } else {
     alert('You cannot play this card!');
   }
+  
 };
 
 // Method to draw a card
