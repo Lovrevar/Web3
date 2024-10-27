@@ -8,31 +8,31 @@
 
     <!-- Bot Areas -->
     <!-- For 1 Bot: Place on Top -->
-    <div v-if="numberOfBots === 1" class="bot-area top centered">
+    <div v-if="botNames.length === 1" class="bot-area top centered">
       <h2>{{ botNames[0] }}</h2>
       <Hand :playerHand="botHands[0]" :isBotCard="true" />
     </div>
 
     <!-- For 2 Bots: Place First Bot on Left, Second Bot on Top -->
-    <div v-if="numberOfBots === 2" class="bot-area left">
+    <div v-if="botNames.length === 2" class="bot-area left">
       <h2>{{ botNames[0] }}</h2>
       <Hand :playerHand="botHands[0]" :isVertical="true" :isBotCard="true" />
     </div>
-    <div v-if="numberOfBots === 2" class="bot-area top centered">
+    <div v-if="botNames.length === 2" class="bot-area top centered">
       <h2>{{ botNames[1] }}</h2>
       <Hand :playerHand="botHands[1]" :isBotCard="true" />
     </div>
 
     <!-- For 3 Bots: Place First Bot on Left, Second Bot on Top, Third Bot on Right -->
-    <div v-if="numberOfBots === 3" class="bot-area left">
+    <div v-if="botNames.length === 3" class="bot-area left">
       <h2>{{ botNames[0] }}</h2>
       <Hand :playerHand="botHands[0]" :isVertical="true" :isBotCard="true" />
     </div>
-    <div v-if="numberOfBots === 3" class="bot-area top centered">
+    <div v-if="botNames.length === 3" class="bot-area top centered">
       <h2>{{ botNames[1] }}</h2>
       <Hand :playerHand="botHands[1]" :isBotCard="true" />
     </div>
-    <div v-if="numberOfBots === 3" class="bot-area right">
+    <div v-if="botNames.length === 3" class="bot-area right">
       <h2>{{ botNames[2] }}</h2>
       <Hand :playerHand="botHands[2]" :isVertical="true" :isBotCard="true" />
     </div>
@@ -51,165 +51,73 @@
 
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
-import Hand from './Hand.vue';
-import UNOCard from './UnoCard.vue';
-import { Deck } from '../Classes/Deck';
-import { useRoute } from 'vue-router';
-import type { ICard } from '../interfaces/IDeck';
-import { SimpleBot } from '../Classes/SimpleBot';
+
+import { ref, computed, onMounted } from 'vue';
+import { useRouter } from 'vue-router';
 import { Game } from '../Classes/Game';
+import { Hand } from '../Classes/Hand';
+import { PlayerHand } from '../Classes/PlayerHand';
+import UnoCard from './UnoCard.vue';
+import HandComponent from './Hand.vue'; // Renaming to avoid conflict with `Hand` class
+import { SimpleBot } from '../Classes/SimpleBot';
+import type { ICard } from '@/interfaces/IDeck';
 
-const route = useRoute();
-const numberOfBots = parseInt(route.query.bots as string);
+// Props
+const router = useRouter();
 
-// Single deck instance for the entire game
-const deck = ref<Deck | null>(null);
-
-// Player and bot hands
-const playerHand = ref<ICard[]>([]);
-const botHands = ref<ICard[][]>([[], [], []]);
+// State variables
+const playerName = ref('Player');
+const botNames = ref(['Bot 1', 'Bot 2', 'Bot 3']); 
 const discardPile = ref<ICard[]>([]);
-
-// Bots
-const bots = ref<SimpleBot[]>([]);
-
-// Names for bots
-const botNames = ref<string[]>(["Benjamin", "David", "Lovre"]);
-  const botNamesPerm = ref<string[]>(["Benjamin", "David", "Lovre"]);
-const playerName = ref('Me');
-
-// Track if the bot has said UNO
-const botSaidUno = ref<boolean[]>([false, false, false]);
-
-// Game state
+const playerHand = ref<PlayerHand | null>(null);
 const gameOver = ref(false);
+const currentHand = ref<Hand | null>(null);
+const game = ref(new Game(playerName.value, botNames.value.length));
+const botHands = ref<SimpleBot[]>([]);
 
-// Create a game instance (to calculate points and manage hands)
-let game: Game;
+// Computed properties for top card and bot areas based on the number of bots
+const topCard = computed(() => discardPile.value[discardPile.value.length - 1]);
 
-onMounted(() => {
-  deck.value = new Deck();
-  deck.value.initialize();
-  deck.value.shuffle();
+// Functions
 
-  game = new Game(deck.value);
-  game.start(["Player 1", ...botNames.value.slice(0, numberOfBots)]);
+function startNewHand() {
+  const hand = game.value.startNewHand();
+  currentHand.value = hand as Hand;
+  playerHand.value = hand.player;
+  discardPile.value = [hand.getTopCard()];
+  botNames.value = game.value.getBotNames()
+}
 
-  // Deal cards to players and bots
-  for (let i = 0; i < 7; i++) {
-    playerHand.value.push(deck.value.deal()!);
-    for (let j = 0; j < numberOfBots; j++) {
-      botHands.value[j].push(deck.value.deal()!);
-    }
-  }
+// Function to play a card
+function playCard(cardIndex: number, chosenColor?: string) {
+  if (currentHand.value) {
+    if (currentHand.value.play(currentHand.value.player.getCards()[cardIndex])) {
+      playerHand.value = currentHand.value.player
+      discardPile.value = [currentHand.value.getTopCard()];
 
-  // Initialize bots
-  for (let i = 0; i < numberOfBots; i++) {
-    bots.value.push(new SimpleBot(botHands.value[i], botNames.value[i]));  // Pass name to SimpleBot
-  }
-
-  discardPile.value.push(deck.value.deal()!);  // Set the first card in the discard pile
-});
-
-// Method to play a card (player)
-const playCard = (index: number) => {
-  if (gameOver.value) return;
-
-  const cardToPlay = playerHand.value[index];
-  const topCard = discardPile.value[discardPile.value.length - 1];
-  if (cardToPlay.color === topCard.color || cardToPlay.number === topCard.number || ['WILD', 'DRAW4'].includes(cardToPlay.type)) {
-    discardPile.value.push(cardToPlay);
-    playerHand.value.splice(index, 1);
-    console.log(`I played ${cardToPlay.color} ${cardToPlay.number || cardToPlay.type}`);
-    nextTurn();
-  } else {
-    alert('You cannot play this card!');
-  }
-  
-};
-
-// Method to draw a card
-const drawCard = () => {
-  if (deck.value && !gameOver.value) {
-    const newCard = deck.value.deal();
-    if (newCard) {
-      playerHand.value.push(newCard);
-      nextTurn();
-    } else {
-      alert('No more cards in the deck!');
-    }
-  }
-};
-
-const nextTurn = () => {
-  // Loop through each bot and let them play their turn
-  bots.value.forEach((bot, index) => {
-    if (gameOver.value) return;
-
-    const card = bot.playCard(discardPile.value);
-    if (card) {
-      discardPile.value.push(card);  // Add the bot's played card to the discard pile
-      botHands.value[index] = botHands.value[index].filter(c => c !== card);  // Remove the card from the bot's hand
-
-      // If the bot has exactly 1 card, it should say UNO
-      if (botHands.value[index].length === 1 && !botSaidUno.value[index]) {
-        botNames.value[index] = `${bot.name} says UNO`;
-        bot.sayUno();
-      }
-      // If the bot has no cards, the game is over
-      else if (botHands.value[index].length === 0) {
-        for(let i = 0; i < numberOfBots; i++)
-      {
-        botNames.value[i]=botNamesPerm.value[i];
-        console.log(botNames.value[i]);
-      }
+      if (currentHand.value.hasEnded) {
         gameOver.value = true;
-        
-        botNames.value[index] = `${bot.name}`;
-        alert(`${bot.name} wins!`);
-        // Calculate final points and update names
-        game.calculateFinalPoints(playerHand.value, botHands.value, playerName, botNames.value);
-
-        
-      }
+        router.push({ name: 'GameOverScreen' });
+      } 
     } else {
-      // If the bot cannot play, it draws a card
-      const newCard = deck.value?.deal();
-      if (newCard) {
-        bot.drawCard(newCard);
-        botNames.value[index] = `${bot.name}`;
-        botHands.value[index].push(newCard);  // Add the drawn card to the bot's hand
-      }
-    }
-
-    // Reset the bot's UNO announcement if they now have more than 1 card
-    // if (botSaidUno.value[index] && botHands.value[index].length !== 1) {
-    //   botNames.value[index] = `${bot.name}`;
-    //   botSaidUno.value[index] = false;
-    // }
-  });
-
-  // Check if it's the player's turn after the bots finish
-  if (!gameOver.value) {
-    const playerTurn = playerHand.value.length === 1;
-    if (playerTurn && !botSaidUno.value[0]) {
-      playerName.value = `${playerName.value} says UNO`;
-    }
-
-    if (playerHand.value.length === 0) {
-      gameOver.value = true;
-      playerName.value = `${playerName.value} wins!`;
-
-      // Calculate final points and update names
-      game.calculateFinalPoints(playerHand.value, botHands.value, playerName, botNames.value);
-
-      alert(`${playerName.value}  kurac wins!`);
+      console.warn("Invalid card play");
     }
   }
-};
+}
 
 
+// Function to draw a card
+function drawCard() {
+  if (currentHand.value) {
+    currentHand.value.drawCard();
+    currentHand.value.endTurn();
+  }
+}
+
+// Initialize the game on mount
+onMounted(() => {
+  startNewHand();
+});
 
 </script>
 

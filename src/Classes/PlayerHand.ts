@@ -2,7 +2,12 @@ import type { ICard } from '../interfaces/IDeck';
 import type { IPlayerHand } from '../interfaces/IPlayerHand';
 export class PlayerHand implements IPlayerHand {
     private cards: ICard[] = [];
+    private name: string;
   
+    constructor(player: string) {
+      this.name = player
+    }
+
     // Add a card to the hand
     addCard(card: ICard): void {
       this.cards.push(card);

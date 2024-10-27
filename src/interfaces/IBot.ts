@@ -1,4 +1,5 @@
 import type { ICard } from './IDeck'; // Assuming Card interface is in Deck.ts
+import type { IHand } from './IHand';
 
 // Define the Bot interface
 export interface IBot {
@@ -6,7 +7,7 @@ export interface IBot {
   hand: ICard[];
 
   // The bot makes a play based on the current discard pile
-  playCard(discardPile: ICard[],botNumber: number): ICard | null;
+  playCard(hand: IHand): void;
 
   // The bot draws a card (you can implement the draw logic separately)
   drawCard(newCard: ICard, botNumber: number): void;
@@ -15,4 +16,6 @@ export interface IBot {
 
   // Bot announces UNO
   sayUno(botNumber: number): void;
+
+  addCard(card: ICard): void
 }

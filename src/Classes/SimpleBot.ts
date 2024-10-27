@@ -1,17 +1,17 @@
 import type { ICard } from '../interfaces/IDeck';
 import type { IBot } from '../interfaces/IBot';
+import type { IHand } from '../interfaces/IHand';
 
 export class SimpleBot implements IBot {
-  hand: ICard[];
+  hand: ICard[] = [];
   name: string;
 
-  constructor(initialHand: ICard[], name: string) {
-    this.hand = initialHand;
+  constructor(name: string) {
     this.name = name;  // Store bot's name
   }
 
-  playCard(discardPile: ICard[]): ICard | null {
-    const topCard = discardPile[discardPile.length - 1];
+  playCard(hand: IHand) {
+    const topCard = hand.getTopCard()
     const legalPlays = this.hand.filter(card => (
       card.color === topCard.color || 
       card.number === topCard.number || 
@@ -21,11 +21,21 @@ export class SimpleBot implements IBot {
 
     if (legalPlays.length > 0) {
       const chosenCard = legalPlays[Math.floor(Math.random() * legalPlays.length)];
+      if(hand.play(chosenCard))
+      {
       this.hand = this.hand.filter(card => card !== chosenCard);
       console.log(`${this.name} played: ${chosenCard.color} ${chosenCard.number || chosenCard.type}`);
-      return chosenCard;
+      hand.endTurn();
+      return;
+      }
+      else
+      {
+        hand.drawCard()
+        hand.endTurn();
+      }
+      ;
     }
-    return null;
+    
   }
 
   drawCard(newCard: ICard): void {
@@ -39,5 +49,16 @@ export class SimpleBot implements IBot {
 
   sayUno() {
     console.log(`${this.name} says UNO!`);
+  }
+
+  removeCard(card: ICard): void {
+    const index = this.hand.findIndex(c => c === card);
+    if (index !== -1) {
+      this.hand.splice(index, 1);
+    }
+  }
+
+  addCard(card: ICard): void {
+    this.hand.push(card);
   }
 }

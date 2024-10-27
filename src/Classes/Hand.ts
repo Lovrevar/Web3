@@ -1,4 +1,4 @@
-import type { ICard } from '../interfaces/IDeck';
+/*import type { ICard } from '../interfaces/IDeck';
 import type { IDeck } from '../interfaces/IDeck';
 import type { IPlayerHand } from '../interfaces/IPlayerHand';
 import type { IHand } from '../interfaces/IHand';
@@ -106,5 +106,151 @@ export class Hand implements IHand {
       return true;
     }
     return false;
+  }
+}
+*/
+
+import type { ICard } from '../interfaces/IDeck';
+import type { IDeck } from '../interfaces/IDeck';
+import type { IPlayerHand } from '../interfaces/IPlayerHand';
+import type { IHand } from '../interfaces/IHand';
+import { PlayerHand } from './PlayerHand';
+import { SimpleBot } from './SimpleBot';
+import { Deck } from './Deck'
+import type { IGame } from '@/interfaces/IGame';
+
+
+export class Hand implements IHand {
+private bots: Map<string, SimpleBot> = new Map<string, SimpleBot>();
+private players: string[];
+private deck: Deck;
+private nextPlayer: string = '';
+private direction:number = 1;
+private game:IGame;
+currentPlayer: string = '';
+discardPile: ICard;
+drawAmmount: number = 0;
+hasEnded: boolean = false;
+player: IPlayerHand ;
+
+  constructor(game: IGame) {
+    this.game = game
+    this.players = game.getPlayers()
+    this.player = new PlayerHand(this.players[0]);
+    for (let i = 1; i <= this.players.length; i++) {
+      this.bots.set(this.players[i], new SimpleBot(this.players[i]))
+    }
+    this.deck = new Deck();
+    this.discardPile = this.deck.deal();
+    for(let i = 0; i<7; i++){
+    this.player.addCard(this.deck.deal())
+    for (let bot of this.bots.values()) {
+      bot.drawCard(this.deck.deal());
+    }    
+    this.currentPlayer = this.players[0];
+    this.nextPlayer = this.players[1];
+  }
+  }
+
+  play(card: ICard, chosenColor?: string): boolean{
+    if (card.color !== this.discardPile.color 
+      && card.number !== this.discardPile.number
+      && !['WILD', 'DRAW4'].includes(card.type))
+    {
+      console.warn("Cannot play that card");
+      return false;
+    }
+
+    if (this.currentPlayer === this.players[0]) { 
+      this.player.removeCard(card);}
+    else {
+      const bot = this.bots.get(this.currentPlayer);
+      if (bot) {
+        bot.removeCard(card);
+      }  
+    }
+
+    this.discardPile = card;
+    let x = 1;
+    if(card.type = 'BLOCK')
+    {
+      x=2;
+    }
+    else if(card.type = 'REVERSE')
+    {
+      this.direction = -1*this.direction
+    }
+    else if(card.type = 'WILD')
+    {
+      if (chosenColor) {
+        this.discardPile.color = chosenColor as "RED" | "BLUE" | "GREEN" | "YELLOW" | "BLACK";;
+      } else {
+        console.warn("No color chosen for wild card");
+        return false;
+      }}
+    else if(card.type = 'DRAW2')
+    {
+      this.drawAmmount = 2
+    }
+    else if(card.type = 'DRAW4')
+    {
+      this.drawAmmount = 4;
+      if (chosenColor) {
+        this.discardPile.color = chosenColor as "RED" | "BLUE" | "GREEN" | "YELLOW" | "BLACK";;
+      } else {
+        console.warn("No color chosen for wild card");
+        return false;
+      }}
+    
+    this.currentPlayer = this.players[(this.players.indexOf(this.currentPlayer)+(x*this.direction))%this.players.length];
+    this.nextPlayer = this.players[this.players.indexOf(this.currentPlayer)+this.direction]
+    return true;
+  }
+
+  drawCard(){
+    let card = this.deck.deal()
+    if (this.currentPlayer === this.players[0]) { 
+      this.player.addCard(card);}
+    else {
+      const bot = this.bots.get(this.currentPlayer);
+      if (bot) {
+        bot.addCard(card);
+      }  
+    }
+  }
+
+  endTurn(){
+    if(this.drawAmmount !== 0)
+    {
+      if (this.currentPlayer === this.players[0]) {
+        for (let i = 0; i < this.drawAmmount; i++) {
+          this.player.addCard(this.deck.deal());
+        }
+      } 
+      else {
+        const bot = this.bots.get(this.currentPlayer);
+        if (bot) {
+          for (let i = 0; i < this.drawAmmount; i++) {
+            bot.drawCard(this.deck.deal());
+          }
+        }  
+        this.drawAmmount = 0;
+      }
+    }
+    if (this.currentPlayer !== this.players[0]) {
+      this.botTurn();
+    }
+  }
+
+  private botTurn() {
+    const bot = this.bots.get(this.currentPlayer);
+    if(bot)
+    {
+      bot.playCard(this)
+    }
+  }
+
+  getTopCard(): ICard{
+    return this.discardPile;
   }
 }

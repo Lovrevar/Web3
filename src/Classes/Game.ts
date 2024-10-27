@@ -1,4 +1,4 @@
-import type { ICard } from '../interfaces/IDeck';
+/*import type { ICard } from '../interfaces/IDeck';
 import type { IDeck } from '../interfaces/IDeck';
 import type { IHand } from '../interfaces/IHand';
 import { Hand } from './Hand';
@@ -228,4 +228,50 @@ export class Game {
         botNames[winnerIndex - 1] = `${botNames[winnerIndex - 1]} won and gained ${totalPoints} points`;
     }
 }
+}
+*/
+
+import type { ICard } from '../interfaces/IDeck';
+import type { IDeck } from '../interfaces/IDeck';
+import type { IHand } from '../interfaces/IHand';
+import { Hand } from './Hand';
+import { PlayerHand } from './PlayerHand';
+import { SimpleBot } from './SimpleBot';
+
+export class Game {
+  private players: string[] = [];
+  private scores: Map<string, number> = new Map<string, number>();
+  private botNames: string[] = ["Lovre","Benjo","David"]
+
+  constructor(player: string, noOfBots: number) {
+    this.players = [player];
+    for (let i = 0; i < noOfBots; i++) {
+      this.players.push(this.botNames[i])
+    }
+    for (var p in this.players) {
+      this.scores.set(p, 0);
+    }
+  }
+
+  startNewHand(): IHand {
+    return new Hand(this);
+  }
+
+  endHand(winner: string, score: number): number {
+    const current = this.scores.get(winner) || 0; // Default to 0 if the key doesn't exist
+    this.scores.set(winner, current + score);
+    return this.scores.get(winner)!;
+  }
+
+  getScores(): Map<string, number>{
+    return this.scores;
+  }
+
+  getPlayers(): string[]{
+    return this.players;
+  }
+
+  getBotNames(): string[]{
+    return this.botNames;
+  }
 }
