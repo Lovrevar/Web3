@@ -53,7 +53,7 @@
 <script setup lang="ts">
 
 import { ref, computed, onMounted } from 'vue';
-import { useRouter } from 'vue-router';
+import { useRouter, useRoute } from 'vue-router';
 import { Game } from '../Classes/Game';
 import { Hand } from '../Classes/Hand';
 import { PlayerHand } from '../Classes/PlayerHand';
@@ -64,8 +64,10 @@ import type { ICard } from '@/interfaces/IDeck';
 
 // Props
 const router = useRouter();
+const route = useRoute()
 
 // State variables
+const bot
 const playerName = ref('Player');
 const botNames = ref(['Bot 1', 'Bot 2', 'Bot 3']); 
 const discardPile = ref<ICard[]>([]);
