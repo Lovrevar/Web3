@@ -66,8 +66,7 @@ import type { ICard } from '@/interfaces/IDeck';
 const router = useRouter();
 const route = useRoute()
 
-// State variables
-const bot
+const numberOfBots = parseInt(route.query.bots as string);
 const playerName = ref('Player');
 const botNames = ref(['Bot 1', 'Bot 2', 'Bot 3']); 
 const discardPile = ref<ICard[]>([]);
