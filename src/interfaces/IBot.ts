@@ -17,5 +17,7 @@ export interface IBot {
   // Bot announces UNO
   sayUno(botNumber: number): void;
 
-  addCard(card: ICard): void
+  addCard(card: ICard): void;
+
+  getCards(): ICard[];
 }

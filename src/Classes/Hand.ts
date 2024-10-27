@@ -141,6 +141,8 @@ player: IPlayerHand ;
       this.bots.set(this.players[i], new SimpleBot(this.players[i]))
     }
     this.deck = new Deck();
+    this.deck.initialize();
+    this.deck.shuffle();
     this.discardPile = this.deck.deal();
     for(let i = 0; i<7; i++){
     this.player.addCard(this.deck.deal())
@@ -252,5 +254,8 @@ player: IPlayerHand ;
 
   getTopCard(): ICard{
     return this.discardPile;
+  }
+  getBots(): SimpleBot[]{
+    return Array.from(this.bots.values());
   }
 }

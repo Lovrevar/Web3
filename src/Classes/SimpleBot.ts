@@ -61,4 +61,8 @@ export class SimpleBot implements IBot {
   addCard(card: ICard): void {
     this.hand.push(card);
   }
+
+  getCards(): ICard[]{
+    return this.hand;
+  }
 }

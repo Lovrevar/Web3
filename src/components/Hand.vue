@@ -7,7 +7,7 @@
       :card="card" 
       :isVertical= "isVertical"
       :isBotCard= "isBotCard" 
-      @click="() => playCard(index)" 
+      @click="() => playCard?.(index, undefined)" 
     />
   </div>
 </template>

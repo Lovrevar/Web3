@@ -3,38 +3,38 @@
     <!-- Player Area (Bottom) -->
     <div class="player-area">
       <h2>{{ playerName }}</h2>
-      <Hand :playerHand="playerHand" :playCard="playCard" />
+      <HandComponent v-if="playerHand" :playerHand="playerHand?.getCards()" :playCard="playCard" />
     </div>
 
     <!-- Bot Areas -->
     <!-- For 1 Bot: Place on Top -->
-    <div v-if="botNames.length === 1" class="bot-area top centered">
+    <div v-if="numberOfBots === 1" class="bot-area top centered">
       <h2>{{ botNames[0] }}</h2>
-      <Hand :playerHand="botHands[0]" :isBotCard="true" />
+      <HandComponent v-if="botHands[0]" :playerHand="botHands[0].getCards()" :isBotCard="true" />
     </div>
 
     <!-- For 2 Bots: Place First Bot on Left, Second Bot on Top -->
-    <div v-if="botNames.length === 2" class="bot-area left">
+    <div v-if="numberOfBots === 2" class="bot-area left">
       <h2>{{ botNames[0] }}</h2>
-      <Hand :playerHand="botHands[0]" :isVertical="true" :isBotCard="true" />
+      <HandComponent v-if="botHands[0]" :playerHand="botHands[0].getCards()" :isVertical="true" :isBotCard="true" />
     </div>
-    <div v-if="botNames.length === 2" class="bot-area top centered">
+    <div v-if="numberOfBots === 2" class="bot-area top centered">
       <h2>{{ botNames[1] }}</h2>
-      <Hand :playerHand="botHands[1]" :isBotCard="true" />
+      <HandComponent v-if="botHands[1]" :playerHand="botHands[1].getCards()" :isBotCard="true" />
     </div>
 
     <!-- For 3 Bots: Place First Bot on Left, Second Bot on Top, Third Bot on Right -->
-    <div v-if="botNames.length === 3" class="bot-area left">
+    <div v-if="numberOfBots === 3" class="bot-area left">
       <h2>{{ botNames[0] }}</h2>
-      <Hand :playerHand="botHands[0]" :isVertical="true" :isBotCard="true" />
+      <HandComponent v-if="botHands[0]" :playerHand="botHands[0].getCards()" :isVertical="true" :isBotCard="true" />
     </div>
-    <div v-if="botNames.length === 3" class="bot-area top centered">
+    <div v-if="numberOfBots === 3" class="bot-area top centered">
       <h2>{{ botNames[1] }}</h2>
-      <Hand :playerHand="botHands[1]" :isBotCard="true" />
+      <HandComponent v-if="botHands[1]" :playerHand="botHands[1].getCards()" :isBotCard="true" />
     </div>
-    <div v-if="botNames.length === 3" class="bot-area right">
+    <div v-if="numberOfBots === 3" class="bot-area right">
       <h2>{{ botNames[2] }}</h2>
-      <Hand :playerHand="botHands[2]" :isVertical="true" :isBotCard="true" />
+      <HandComponent v-if="botHands[2]" :playerHand="botHands[2].getCards()" :isVertical="true" :isBotCard="true" />
     </div>
 
     <!-- Discard Pile (Center) -->
@@ -52,12 +52,12 @@
 
 <script setup lang="ts">
 
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { Game } from '../Classes/Game';
 import { Hand } from '../Classes/Hand';
 import { PlayerHand } from '../Classes/PlayerHand';
-import UnoCard from './UnoCard.vue';
+import UNOCard from './UnoCard.vue';
 import HandComponent from './Hand.vue'; // Renaming to avoid conflict with `Hand` class
 import { SimpleBot } from '../Classes/SimpleBot';
 import type { ICard } from '@/interfaces/IDeck';
@@ -114,6 +114,17 @@ function drawCard() {
     currentHand.value.endTurn();
   }
 }
+
+watch(currentHand, (newHand) => {
+  if (newHand) {
+    playerHand.value = newHand.player;
+    if (newHand.getTopCard) {
+      discardPile.value = [newHand.getTopCard()];
+    }
+    botHands.value = newHand.getBots();
+  }
+}, { deep: true, immediate: true });
+
 
 // Initialize the game on mount
 onMounted(() => {

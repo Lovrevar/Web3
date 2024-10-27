@@ -1,3 +1,4 @@
+import type { SimpleBot } from '@/Classes/SimpleBot';
 import type { ICard } from './IDeck';
 import type { IPlayerHand } from './IPlayerHand';
 export interface IHand {
@@ -6,4 +7,5 @@ export interface IHand {
   endTurn(): void;
   getTopCard(): ICard;
   drawCard(): void;
+  getBots(): SimpleBot[];
 }
