@@ -26,15 +26,15 @@
     <!-- For 3 Bots: Place First Bot on Left, Second Bot on Top, Third Bot on Right -->
     <div v-if="numberOfBots === 3" class="bot-area left">
       <h2>{{ botNames[0] }}</h2>
-      <HandComponent v-if="botHands[0]" :playerHand="botHands[0].getCards()" :isVertical="true" :isBotCard="true" />
+      <HandComponent v-if="botHands[0]" :playerHand="botHands[0].getCards()" :isVertical="true" :isBotCard="false" />
     </div>
     <div v-if="numberOfBots === 3" class="bot-area top centered">
       <h2>{{ botNames[1] }}</h2>
-      <HandComponent v-if="botHands[1]" :playerHand="botHands[1].getCards()" :isBotCard="true" />
+      <HandComponent v-if="botHands[1]" :playerHand="botHands[1].getCards()" :isBotCard="false" />
     </div>
     <div v-if="numberOfBots === 3" class="bot-area right">
       <h2>{{ botNames[2] }}</h2>
-      <HandComponent v-if="botHands[2]" :playerHand="botHands[2].getCards()" :isVertical="true" :isBotCard="true" />
+      <HandComponent v-if="botHands[2]" :playerHand="botHands[2].getCards()" :isVertical="true" :isBotCard="false" />
     </div>
 
     <!-- Discard Pile (Center) -->
@@ -46,7 +46,23 @@
     <div class="draw-card-button">
       <button @click="drawCard" :disabled="gameOver">Draw Card</button>
     </div>
+
+    <div v-if="showColorPicker" class="color-picker-overlay">
+      <h3>Select a color for your Wild card</h3>
+      <button @click="chooseColor('RED')">Red</button>
+      <button @click="chooseColor('BLUE')">Blue</button>
+      <button @click="chooseColor('GREEN')">Green</button>
+      <button @click="chooseColor('YELLOW')">Yellow</button>
+    </div>
+    <EndHandScreen
+      v-if="showEndHandScreen"
+      :winner="winner"
+      :score="handScore"
+      :leaderboard="leaderboard"
+      @play-next-hand="startNewHand"
+    />
   </div>
+
 </template>
 
 
@@ -61,6 +77,8 @@ import UNOCard from './UnoCard.vue';
 import HandComponent from './Hand.vue'; // Renaming to avoid conflict with `Hand` class
 import { SimpleBot } from '../Classes/SimpleBot';
 import type { ICard } from '@/interfaces/IDeck';
+import EndHandScreen from './EndHandScreen.vue';
+
 
 // Props
 const router = useRouter();
@@ -75,6 +93,14 @@ const gameOver = ref(false);
 const currentHand = ref<Hand | null>(null);
 const game = ref(new Game(playerName.value, botNames.value.length));
 const botHands = ref<SimpleBot[]>([]);
+const showColorPicker = ref(false);
+const chosenColor = ref<string | null>(null);
+const showEndHandScreen = ref(false);
+const winner = ref('');
+const handScore = ref(0);
+const leaderboard = ref<{ [player: string]: number }>({});
+
+let chosenCard: number;
 
 // Computed properties for top card and bot areas based on the number of bots
 const topCard = computed(() => discardPile.value[discardPile.value.length - 1]);
@@ -82,38 +108,70 @@ const topCard = computed(() => discardPile.value[discardPile.value.length - 1]);
 // Functions
 
 function startNewHand() {
+  //console.log("function startNewHand() oneHandScreen");
+  showEndHandScreen.value = false; 
   const hand = game.value.startNewHand();
   currentHand.value = hand as Hand;
   playerHand.value = hand.player;
   discardPile.value = [hand.getTopCard()];
-  botNames.value = game.value.getBotNames()
+  botNames.value = game.value.getBotNames();
+  console.log(currentHand.value?.currentPlayer)
+}
+
+
+ function playCard(cardIndex: number) {
+  if (currentHand.value?.currentPlayer !== "Player" ) 
+  {return;}
+  const selectedCard = currentHand.value?.player.getCards()[cardIndex];
+  if (selectedCard && selectedCard.color === 'BLACK' && 
+      (selectedCard.type === 'WILD' || selectedCard.type === 'DRAW4')) {
+    showColorPicker.value = true;
+    chosenCard = cardIndex;
+  } else {
+    processCardPlay(cardIndex);
+  }
 }
 
 // Function to play a card
-function playCard(cardIndex: number, chosenColor?: string) {
+function processCardPlay(cardIndex: number, chosenColor?: string) {
+  //console.log("function playCard() oneHandScreen");
+  console.log("i played a " + currentHand.value?.player.getCards()[cardIndex].color + " " + currentHand.value?.player.getCards()[cardIndex].type)
   if (currentHand.value) {
-    if (currentHand.value.play(currentHand.value.player.getCards()[cardIndex])) {
-      playerHand.value = currentHand.value.player
-      discardPile.value = [currentHand.value.getTopCard()];
-
-      if (currentHand.value.hasEnded) {
-        gameOver.value = true;
-        router.push({ name: 'GameOverScreen' });
-      } 
+    if (currentHand.value.play(currentHand.value.player.getCards()[cardIndex], chosenColor)) {
+      currentHand.value.endTurn();
     } else {
       console.warn("Invalid card play");
     }
+  }
+  chosenCard = 0;
+}
+
+function chooseColor(color: string) {
+  showColorPicker.value = false;
+
+  if (chosenCard >= 0) {
+    processCardPlay(chosenCard, color);
   }
 }
 
 
 // Function to draw a card
 function drawCard() {
+  //console.log("function drawCard() oneHandScreen");
   if (currentHand.value) {
     currentHand.value.drawCard();
     currentHand.value.endTurn();
   }
 }
+
+function endHand() {
+  if(currentHand.value?.winner){
+  winner.value = currentHand.value?.winner;
+  handScore.value = currentHand.value?.getWinnerScore();}
+  leaderboard.value = Object.fromEntries(game.value.getScores());
+  showEndHandScreen.value = true;
+}
+
 
 watch(currentHand, (newHand) => {
   if (newHand) {
@@ -122,6 +180,9 @@ watch(currentHand, (newHand) => {
       discardPile.value = [newHand.getTopCard()];
     }
     botHands.value = newHand.getBots();
+    if (currentHand.value?.hasEnded) {
+      endHand()
+      } 
   }
 }, { deep: true, immediate: true });
 
@@ -195,4 +256,22 @@ onMounted(() => {
   transform: translate(-50%, -50%);
   text-align: center;
 }
+
+.color-picker-overlay {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background-color: white;
+  padding: 20px;
+  border: 2px solid black;
+  z-index: 1000;
+  text-align: center;
+}
+.color-picker-overlay button {
+  margin: 5px;
+  padding: 10px 20px;
+  font-size: 16px;
+}
+
 </style>

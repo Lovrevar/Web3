@@ -131,13 +131,15 @@ currentPlayer: string = '';
 discardPile: ICard;
 drawAmmount: number = 0;
 hasEnded: boolean = false;
+winner: string = '';
+winnerScore: number = 0;
 player: IPlayerHand ;
 
   constructor(game: IGame) {
     this.game = game
     this.players = game.getPlayers()
     this.player = new PlayerHand(this.players[0]);
-    for (let i = 1; i <= this.players.length; i++) {
+    for (let i = 1; i < this.players.length; i++) {
       this.bots.set(this.players[i], new SimpleBot(this.players[i]))
     }
     this.deck = new Deck();
@@ -155,13 +157,16 @@ player: IPlayerHand ;
   }
 
   play(card: ICard, chosenColor?: string): boolean{
+    //console.log("function play() Hand.ts");
     if (card.color !== this.discardPile.color 
       && card.number !== this.discardPile.number
+      && !(card.type == 'DRAW2' && card.type == 'DRAW2')
       && !['WILD', 'DRAW4'].includes(card.type))
     {
       console.warn("Cannot play that card");
       return false;
     }
+    console.log(this.currentPlayer);
 
     if (this.currentPlayer === this.players[0]) { 
       this.player.removeCard(card);}
@@ -174,27 +179,27 @@ player: IPlayerHand ;
 
     this.discardPile = card;
     let x = 1;
-    if(card.type = 'BLOCK')
+    if(card.type == 'BLOCK')
     {
       x=2;
     }
-    else if(card.type = 'REVERSE')
+    else if(card.type == 'REVERSE')
     {
       this.direction = -1*this.direction
     }
-    else if(card.type = 'WILD')
+    else if(card.type == 'WILD')
     {
       if (chosenColor) {
-        this.discardPile.color = chosenColor as "RED" | "BLUE" | "GREEN" | "YELLOW" | "BLACK";;
+        this.discardPile.color = chosenColor as "RED" | "BLUE" | "GREEN" | "YELLOW" | "BLACK";
       } else {
         console.warn("No color chosen for wild card");
         return false;
       }}
-    else if(card.type = 'DRAW2')
+    else if(card.type == 'DRAW2')
     {
       this.drawAmmount = 2
     }
-    else if(card.type = 'DRAW4')
+    else if(card.type == 'DRAW4')
     {
       this.drawAmmount = 4;
       if (chosenColor) {
@@ -203,13 +208,14 @@ player: IPlayerHand ;
         console.warn("No color chosen for wild card");
         return false;
       }}
-    
-    this.currentPlayer = this.players[(this.players.indexOf(this.currentPlayer)+(x*this.direction))%this.players.length];
-    this.nextPlayer = this.players[this.players.indexOf(this.currentPlayer)+this.direction]
+    this.checkWin()
+    this.setPlayers(x)
+    //console.log("current player: " +this.currentPlayer + ", next player: " + this.nextPlayer);
     return true;
   }
 
   drawCard(){
+    //console.log("function drawCard() Hand.ts");
     let card = this.deck.deal()
     if (this.currentPlayer === this.players[0]) { 
       this.player.addCard(card);}
@@ -219,9 +225,23 @@ player: IPlayerHand ;
         bot.addCard(card);
       }  
     }
+    this.setPlayers(1)
   }
 
+  setPlayers(x: number) {
+    let y = (this.players.indexOf(this.currentPlayer)+(x*this.direction))
+    this.currentPlayer = this.players[
+      (y%this.players.length + this.players.length) % this.players.length
+    ];
+    this.nextPlayer = this.players[this.players.indexOf(this.currentPlayer)+this.direction]
+  }
+    
   endTurn(){
+    //console.log("function endTurn() Hand.ts");
+    if (this.hasEnded)
+    { console.log("game ended")
+      return;}
+    console.log(this.currentPlayer + "'s turn")
     if(this.drawAmmount !== 0)
     {
       if (this.currentPlayer === this.players[0]) {
@@ -229,7 +249,7 @@ player: IPlayerHand ;
           this.player.addCard(this.deck.deal());
         }
       } 
-      else {
+      else {console.log("asdasdasd") 
         const bot = this.bots.get(this.currentPlayer);
         if (bot) {
           for (let i = 0; i < this.drawAmmount; i++) {
@@ -239,12 +259,36 @@ player: IPlayerHand ;
         this.drawAmmount = 0;
       }
     }
+    
     if (this.currentPlayer !== this.players[0]) {
       this.botTurn();
     }
   }
 
+  checkWin() {
+    if (this.currentPlayer === this.players[0]) {
+      if(this.player.getCards().length === 0)
+      {
+        this.hasEnded = true;
+        this.winner = this.currentPlayer;
+        this.drawAmmount = 0;
+        this.calculateScore();
+      }
+    } 
+    else {
+      const bot = this.bots.get(this.currentPlayer);
+      if (bot && this.bots.get(this.currentPlayer)?.getCards().length === 0) {
+        this.hasEnded = true;
+        this.winner = this.currentPlayer;
+        this.drawAmmount = 0;
+        this.calculateScore();
+      }  
+     
+    }
+  }
+
   private botTurn() {
+    console.log("function botTurn() Hand.ts");
     const bot = this.bots.get(this.currentPlayer);
     if(bot)
     {
@@ -257,5 +301,15 @@ player: IPlayerHand ;
   }
   getBots(): SimpleBot[]{
     return Array.from(this.bots.values());
+  }
+
+  calculateScore(){
+    this.winnerScore = 0;
+    //do calculation
+    this.game.endHand(this.winner, this.winnerScore)
+  }
+
+  getWinnerScore(): number{
+    return this.winnerScore;
   }
 }
