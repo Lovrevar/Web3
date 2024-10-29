@@ -241,15 +241,16 @@ import { SimpleBot } from './SimpleBot';
 export class Game {
   private players: string[] = [];
   private scores: Map<string, number> = new Map<string, number>();
-  private botNames: string[] = ["Lovre","Benjo","David"]
+  private botNames: string[] = ["Lovre","Benjo","David"];
+  hasEnded: boolean = false;
 
   constructor(player: string, noOfBots: number) {
     this.players = [player];
     for (let i = 0; i < noOfBots; i++) {
       this.players.push(this.botNames[i])
     }
-    for (var p in this.players) {
-      this.scores.set(p, 0);
+    for (const playerName of this.players) {
+      this.scores.set(playerName, 499); 
     }
   }
 
@@ -258,14 +259,20 @@ export class Game {
   }
 
   endHand(winner: string, score: number): number {
-    const current = this.scores.get(winner) || 0; // Default to 0 if the key doesn't exist
+    const current = this.scores.get(winner) || 0;
     this.scores.set(winner, current + score);
+    if ((this.scores.get(winner)|| 0) >= 500)
+    {
+      this.hasEnded = true;
+    }
     return this.scores.get(winner)!;
   }
 
-  getScores(): Map<string, number>{
-    return this.scores;
-  }
+  getScores(): Map<string, number> {
+    const sortedScores = Array.from(this.scores.entries())
+        .sort((a, b) => b[1] - a[1]);
+    return new Map(sortedScores);
+}
 
   getPlayers(): string[]{
     return this.players;

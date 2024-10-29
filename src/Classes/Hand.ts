@@ -256,10 +256,9 @@ player: IPlayerHand ;
             bot.drawCard(this.deck.deal());
           }
         }  
-        this.drawAmmount = 0;
       }
     }
-    
+    this.drawAmmount = 0;
     if (this.currentPlayer !== this.players[0]) {
       this.botTurn();
     }
@@ -304,10 +303,30 @@ player: IPlayerHand ;
   }
 
   calculateScore(){
-    this.winnerScore = 0;
+    let score = 0;
+    let hand:ICard[];
+    for (let i = 0; i < this.players.length; i++)
+    {
+      hand = this.bots.get(this.players[i])?.getCards() || this.player.getCards();
+      score += this.calculatePoints(hand);
+    }
+    this.winnerScore = score;
     //do calculation
     this.game.endHand(this.winner, this.winnerScore)
   }
+
+  calculatePoints = (hand: ICard[]): number => {
+    return hand.reduce((totalPoints, card) => {
+        if (card.type === 'NUMBERED') {
+            return totalPoints + (card.number || 0);
+        } else if (['BLOCK', 'REVERSE', 'DRAW2'].includes(card.type)) {
+            return totalPoints + 20;
+        } else if (['WILD', 'DRAW4'].includes(card.type)) {
+            return totalPoints + 50;
+        }
+        return totalPoints;
+    }, 0);
+};
 
   getWinnerScore(): number{
     return this.winnerScore;

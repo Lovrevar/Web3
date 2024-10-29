@@ -59,7 +59,9 @@
       :winner="winner"
       :score="handScore"
       :leaderboard="leaderboard"
+      :hasEnded="game.hasEnded"
       @play-next-hand="startNewHand"
+      @end-game = "endGame"
     />
   </div>
 
@@ -172,6 +174,9 @@ function endHand() {
   showEndHandScreen.value = true;
 }
 
+function endGame() {
+  router.push({ path: '/'});
+}
 
 watch(currentHand, (newHand) => {
   if (newHand) {

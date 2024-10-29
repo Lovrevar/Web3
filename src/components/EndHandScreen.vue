@@ -1,7 +1,7 @@
 <template>
     <div class="end-hand-screen">
       <div class="winner-info">
-        <h2>{{ winner }} won this hand!</h2>
+        <h2>{{ hasEnded ? `${winner} has won the game!!!!` : `${winner} won this hand!` }}</h2>
         <p>Score for this hand: {{ score }}</p>
       </div>
   
@@ -14,7 +14,8 @@
         </ul>
       </div>
   
-      <button @click="playNextHand" class="next-hand-button">Play Next Hand</button>
+      <button v-if="!hasEnded" @click="playNextHand" class="next-hand-button">Play Next Hand</button>
+      <button v-if="hasEnded" @click="endGame" class="next-hand-button">End game</button>
     </div>
   </template>
   
@@ -32,11 +33,18 @@
       leaderboard: {
         type: Object,
         required: true
-      }
+      },
+      hasEnded: {
+        type: Boolean,
+        required: true
+      },
     },
     methods: {
       playNextHand() {
         this.$emit("play-next-hand");
+      },
+      endGame(){
+        this.$emit("end-game");
       }
     }
   };
