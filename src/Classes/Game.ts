@@ -248,9 +248,10 @@ export class Game {
     this.players = [player];
     for (let i = 0; i < noOfBots; i++) {
       this.players.push(this.botNames[i])
+      console.log(noOfBots)
     }
     for (const playerName of this.players) {
-      this.scores.set(playerName, 499); 
+      this.scores.set(playerName, 0); 
     }
   }
 

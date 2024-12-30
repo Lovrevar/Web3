@@ -1,5 +1,10 @@
 import type { ICard } from './IDeck';
 export interface IPlayerHand {
+  hasSaidUno: boolean;  
+
+  //Get name
+  getName():string;
+
   // Add a card to the player's hand
   addCard(card: ICard): void;
 
@@ -14,4 +19,10 @@ export interface IPlayerHand {
 
   // Check if the player has exactly one card left
   hasUno(): boolean;
+
+  sayUno(): void;
+
+  hasUno(): boolean;
+
+  resetUno(): void;
 }

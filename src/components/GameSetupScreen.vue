@@ -9,13 +9,13 @@
 
 <script setup lang="ts">
 import { reactive } from 'vue';
-import { useRouter } from 'vue-router';  // Ensure router is imported
+import { useRouter } from 'vue-router'; 
 
 const state = reactive({
   numberOfBots: 1,
 });
 
-const router = useRouter();  // Use router for navigation
+const router = useRouter();  
 
 const startGame = () => {
   console.log('Button clicked, starting the game...');  // Debugging

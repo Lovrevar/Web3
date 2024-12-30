@@ -124,8 +124,9 @@ export class Hand implements IHand {
 private bots: Map<string, SimpleBot> = new Map<string, SimpleBot>();
 private players: string[];
 private deck: Deck;
-private nextPlayer: string = '';
+private previousPlayer: string = '';
 private direction:number = 1;
+private block:number = 0;
 private game:IGame;
 currentPlayer: string = '';
 discardPile: ICard;
@@ -134,6 +135,7 @@ hasEnded: boolean = false;
 winner: string = '';
 winnerScore: number = 0;
 player: IPlayerHand ;
+saidUno: boolean = false;
 
   constructor(game: IGame) {
     this.game = game
@@ -152,16 +154,17 @@ player: IPlayerHand ;
       bot.drawCard(this.deck.deal());
     }    
     this.currentPlayer = this.players[0];
-    this.nextPlayer = this.players[1];
   }
   }
 
   play(card: ICard, chosenColor?: string): boolean{
     //console.log("function play() Hand.ts");
-    if (card.color !== this.discardPile.color 
-      && card.number !== this.discardPile.number
-      && !(card.type == 'DRAW2' && card.type == 'DRAW2')
-      && !['WILD', 'DRAW4'].includes(card.type))
+    if (!(card.color == this.discardPile.color 
+      || card.number == this.discardPile.number
+      || (card.type == 'REVERSE' && this.discardPile.type == 'REVERSE')
+      || (card.type == 'BLOCK' && this.discardPile.type == 'BLOCK')
+      || (card.type == 'DRAW2' && this.discardPile.type == 'DRAW2')
+      || ['WILD', 'DRAW4'].includes(card.type)))
     {
       console.warn("Cannot play that card");
       return false;
@@ -178,10 +181,9 @@ player: IPlayerHand ;
     }
 
     this.discardPile = card;
-    let x = 1;
     if(card.type == 'BLOCK')
     {
-      x=2;
+      this.block = 1
     }
     else if(card.type == 'REVERSE')
     {
@@ -203,13 +205,12 @@ player: IPlayerHand ;
     {
       this.drawAmmount = 4;
       if (chosenColor) {
-        this.discardPile.color = chosenColor as "RED" | "BLUE" | "GREEN" | "YELLOW" | "BLACK";;
+        this.discardPile.color = chosenColor as "RED" | "BLUE" | "GREEN" | "YELLOW" | "BLACK";
       } else {
         console.warn("No color chosen for wild card");
         return false;
       }}
     this.checkWin()
-    this.setPlayers(x)
     //console.log("current player: " +this.currentPlayer + ", next player: " + this.nextPlayer);
     return true;
   }
@@ -225,44 +226,85 @@ player: IPlayerHand ;
         bot.addCard(card);
       }  
     }
-    this.setPlayers(1)
   }
 
   setPlayers(x: number) {
     let y = (this.players.indexOf(this.currentPlayer)+(x*this.direction))
+    this.previousPlayer = this.currentPlayer;
     this.currentPlayer = this.players[
       (y%this.players.length + this.players.length) % this.players.length
     ];
-    this.nextPlayer = this.players[this.players.indexOf(this.currentPlayer)+this.direction]
   }
     
-  endTurn(){
+  endTurn(saidUno?: boolean){
     //console.log("function endTurn() Hand.ts");
+    if(saidUno !== undefined){
+      this.saidUno = saidUno
+
+      if (this.currentPlayer === this.players[0] && saidUno) {
+        this.player.sayUno()
+      } 
+      else {
+        const bot = this.bots.get(this.currentPlayer);
+        if (bot && saidUno) {
+          bot.sayUno();
+        }  
+      }
+    }
+
+  
+    this.setPlayers(1+this.block);
     if (this.hasEnded)
     { console.log("game ended")
       return;}
     console.log(this.currentPlayer + "'s turn")
-    if(this.drawAmmount !== 0)
-    {
       if (this.currentPlayer === this.players[0]) {
+        this.player.resetUno();
+        if(this.drawAmmount !== 0){
         for (let i = 0; i < this.drawAmmount; i++) {
           this.player.addCard(this.deck.deal());
         }
+      }
       } 
-      else {console.log("asdasdasd") 
-        const bot = this.bots.get(this.currentPlayer);
+      else {
+        const bot = this.bots.get(this.currentPlayer);  
         if (bot) {
+          bot.resetUno();
+          if(this.drawAmmount !== 0){
           for (let i = 0; i < this.drawAmmount; i++) {
             bot.drawCard(this.deck.deal());
           }
         }  
       }
-    }
+      }
+    
+    this.block = 0;
     this.drawAmmount = 0;
     if (this.currentPlayer !== this.players[0]) {
       this.botTurn();
     }
   }
+
+
+  calloutUno(){
+    if (this.previousPlayer === this.players[0]) {
+      if(this.player.getCards().length === 1 && this.saidUno == false)
+      {
+        for(let i = 0; i<4;i++){
+        this.player.addCard(this.deck.deal());}
+      }
+    } 
+    else {
+      const bot = this.bots.get(this.previousPlayer);
+      if (bot && this.bots.get(this.previousPlayer)?.getCards().length === 1 && this.saidUno == false) {
+        for(let i = 0; i<4;i++){
+          bot.drawCard(this.deck.deal());}
+      }  
+     
+    }
+  }
+
+
 
   checkWin() {
     if (this.currentPlayer === this.players[0]) {
@@ -298,8 +340,12 @@ player: IPlayerHand ;
   getTopCard(): ICard{
     return this.discardPile;
   }
-  getBots(): SimpleBot[]{
-    return Array.from(this.bots.values());
+  getBots(): Map<string, SimpleBot>{
+    return this.bots;
+  }
+
+  getPreviousPlayer(){
+    return this.previousPlayer;
   }
 
   calculateScore(){
@@ -331,4 +377,7 @@ player: IPlayerHand ;
   getWinnerScore(): number{
     return this.winnerScore;
   }
+
+
+
 }

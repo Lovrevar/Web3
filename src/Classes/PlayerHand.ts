@@ -3,9 +3,14 @@ import type { IPlayerHand } from '../interfaces/IPlayerHand';
 export class PlayerHand implements IPlayerHand {
     private cards: ICard[] = [];
     private name: string;
+    hasSaidUno = false;
   
     constructor(player: string) {
       this.name = player
+    }
+
+    getName(): string {
+      return this.name;
     }
 
     // Add a card to the hand
@@ -39,5 +44,15 @@ export class PlayerHand implements IPlayerHand {
     // Check if the player has only one card left (for UNO call)
     hasUno(): boolean {
       return this.cards.length === 1;
+    }
+
+    sayUno() {
+      if (this.getCards().length === 1) {
+        this.hasSaidUno = true; // Set the UNO state
+      }
+    }
+  
+    resetUno() {
+      this.hasSaidUno = false; // Reset the UNO state
     }
   }

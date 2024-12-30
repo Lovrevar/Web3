@@ -6,6 +6,11 @@ export interface IBot {
   // Bot's hand (array of cards)
   hand: ICard[];
 
+  hasSaidUno: boolean;
+
+  //Get name
+  getName():string;
+
   // The bot makes a play based on the current discard pile
   playCard(hand: IHand): void;
 
@@ -20,4 +25,6 @@ export interface IBot {
   addCard(card: ICard): void;
 
   getCards(): ICard[];
+
+  resetUno(): void;
 }
