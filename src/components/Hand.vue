@@ -1,4 +1,5 @@
 <template>
+  <h1>{{ name }}</h1>
   <div :class="['deck', isVertical ? 'vertical' : '']">
     <!-- Loop through the deck array and render a card for each -->
     <UNOCard 
@@ -13,9 +14,10 @@
 </template>
 
 <script lang="ts">
-import { defineComponent } from 'vue';
+import { defineComponent, computed } from 'vue';
 import UNOCard from './UnoCard.vue';
 import type { ICard } from '../interfaces/IDeck';
+
 
 export default defineComponent({
   name: 'HandMrs',
@@ -27,8 +29,8 @@ export default defineComponent({
       type: Array as () => ICard[],
       required: false,
     },
-    isVertical: {
-      type: Boolean,
+    position: {
+      type: Number,
       default: false,
     },
     playCard: {
@@ -39,8 +41,20 @@ export default defineComponent({
         type: Boolean,
         default: false,
     },
+    name: {
+      type: String,
+      default: false
+    }
+  },
+  setup(props) {
+    // Determine if the layout should be vertical based on position
+    const isVertical = computed(() => props.position === 2 || props.position === 4);
+    return {
+      isVertical,
+    };
   },
 });
+
 </script>
 
 <style scoped>

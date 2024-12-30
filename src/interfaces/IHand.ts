@@ -3,9 +3,11 @@ import type { ICard } from './IDeck';
 import type { IPlayerHand } from './IPlayerHand';
 export interface IHand {
   player:IPlayerHand,
+  getPreviousPlayer(): string,
   play(card: ICard, chosenColor?: string): boolean;
-  endTurn(): void;
+  endTurn(saidUno?: boolean): void;
   getTopCard(): ICard;
   drawCard(): void;
-  getBots(): SimpleBot[];
+  getBots(): Map<string, SimpleBot>;
+  calloutUno(): void;
 }

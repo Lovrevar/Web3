@@ -2,39 +2,39 @@
   <div class="game-container">
     <!-- Player Area (Bottom) -->
     <div class="player-area">
-      <h2>{{ playerName }}</h2>
-      <HandComponent v-if="playerHand" :playerHand="playerHand?.getCards()" :playCard="playCard" />
+      <span v-if="playerHand?.hasSaidUno" class="uno-indicator">UNO!</span>
+      <HandComponent v-if="playerHand" :playerHand="playerHand?.getCards()" :name=playerHand.getName() :position="1" :playCard="playCard" />
     </div>
 
     <!-- Bot Areas -->
     <!-- For 1 Bot: Place on Top -->
     <div v-if="numberOfBots === 1" class="bot-area top centered">
-      <h2>{{ botNames[0] }}</h2>
-      <HandComponent v-if="botHands[0]" :playerHand="botHands[0].getCards()" :isBotCard="true" />
+      <span v-if="botHands[0]?.hasSaidUno" class="uno-indicator">UNO!</span>
+      <HandComponent v-if="botHands[0]" :playerHand="botHands[0].getCards()" :name=botHands[0].getName() :position="3" :isBotCard="true" />
     </div>
 
     <!-- For 2 Bots: Place First Bot on Left, Second Bot on Top -->
     <div v-if="numberOfBots === 2" class="bot-area left">
-      <h2>{{ botNames[0] }}</h2>
-      <HandComponent v-if="botHands[0]" :playerHand="botHands[0].getCards()" :isVertical="true" :isBotCard="true" />
+      <span v-if="botHands[0]?.hasSaidUno" class="uno-indicator">UNO!</span>
+      <HandComponent v-if="botHands[0]" :playerHand="botHands[0].getCards()" :name=botHands[0].getName() :position="2" :isBotCard="true" />
     </div>
     <div v-if="numberOfBots === 2" class="bot-area top centered">
-      <h2>{{ botNames[1] }}</h2>
-      <HandComponent v-if="botHands[1]" :playerHand="botHands[1].getCards()" :isBotCard="true" />
+      <span v-if="botHands[0]?.hasSaidUno" class="uno-indicator">UNO!</span>
+      <HandComponent v-if="botHands[1]" :playerHand="botHands[1].getCards()" :name=botHands[1].getName() :position="3" :isBotCard="true" />
     </div>
 
     <!-- For 3 Bots: Place First Bot on Left, Second Bot on Top, Third Bot on Right -->
     <div v-if="numberOfBots === 3" class="bot-area left">
-      <h2>{{ botNames[0] }}</h2>
-      <HandComponent v-if="botHands[0]" :playerHand="botHands[0].getCards()" :isVertical="true" :isBotCard="false" />
+      <span v-if="botHands[0]?.hasSaidUno" class="uno-indicator">UNO!</span>
+      <HandComponent v-if="botHands[0]" :playerHand="botHands[0].getCards()" :name=botHands[0].getName() :position="2":isBotCard="false" />
     </div>
     <div v-if="numberOfBots === 3" class="bot-area top centered">
-      <h2>{{ botNames[1] }}</h2>
-      <HandComponent v-if="botHands[1]" :playerHand="botHands[1].getCards()" :isBotCard="false" />
+      <span v-if="botHands[0]?.hasSaidUno" class="uno-indicator">UNO!</span>
+      <HandComponent v-if="botHands[1]" :playerHand="botHands[1].getCards()" :name=botHands[1].getName() :position="3" :isBotCard="false" />
     </div>
     <div v-if="numberOfBots === 3" class="bot-area right">
-      <h2>{{ botNames[2] }}</h2>
-      <HandComponent v-if="botHands[2]" :playerHand="botHands[2].getCards()" :isVertical="true" :isBotCard="false" />
+      <span v-if="botHands[0]?.hasSaidUno" class="uno-indicator">UNO!</span>
+      <HandComponent v-if="botHands[2]" :playerHand="botHands[2].getCards()" :name=botHands[2].getName() :position="4" :isBotCard="false" />
     </div>
 
     <!-- Discard Pile (Center) -->
@@ -44,7 +44,10 @@
 
     <!-- Draw Card Button (Center) -->
     <div class="draw-card-button">
-      <button @click="drawCard" :disabled="gameOver">Draw Card</button>
+      <button v-if="!hasPlayed" @click="drawCard" class="action-button" :disabled="gameOver">Draw Card</button>
+      <button v-if="hasPlayed" @click="calloutUno" class="action-button" :disabled="gameOver">Callout</button>
+      <button @click="endTurn" class="action-button" :disabled="gameOver">End Turn</button>
+      <button @click="sayUno" class="action-button" :disabled="gameOver">Say UNO</button>
     </div>
 
     <div v-if="showColorPicker" class="color-picker-overlay">
@@ -84,7 +87,13 @@ import EndHandScreen from './EndHandScreen.vue';
 
 // Props
 const router = useRouter();
-const route = useRoute()
+const route = useRoute();
+const bots = route.query.bots
+  ? Array.isArray(route.query.bots)
+    ? parseInt(route.query.bots[0] ?? "0", 10)
+    : parseInt(route.query.bots ?? "0", 10) 
+  : 0;
+
 
 const numberOfBots = parseInt(route.query.bots as string);
 const playerName = ref('Player');
@@ -93,16 +102,17 @@ const discardPile = ref<ICard[]>([]);
 const playerHand = ref<PlayerHand | null>(null);
 const gameOver = ref(false);
 const currentHand = ref<Hand | null>(null);
-const game = ref(new Game(playerName.value, botNames.value.length));
+const game = ref(new Game(playerName.value, bots));
 const botHands = ref<SimpleBot[]>([]);
 const showColorPicker = ref(false);
-const chosenColor = ref<string | null>(null);
 const showEndHandScreen = ref(false);
 const winner = ref('');
 const handScore = ref(0);
 const leaderboard = ref<{ [player: string]: number }>({});
 
+let hasPlayed: boolean = false;
 let chosenCard: number;
+let saidUno: boolean;
 
 // Computed properties for top card and bot areas based on the number of bots
 const topCard = computed(() => discardPile.value[discardPile.value.length - 1]);
@@ -122,6 +132,10 @@ function startNewHand() {
 
 
  function playCard(cardIndex: number) {
+  if(hasPlayed)
+  {
+    return;
+  }
   if (currentHand.value?.currentPlayer !== "Player" ) 
   {return;}
   const selectedCard = currentHand.value?.player.getCards()[cardIndex];
@@ -140,11 +154,12 @@ function processCardPlay(cardIndex: number, chosenColor?: string) {
   console.log("i played a " + currentHand.value?.player.getCards()[cardIndex].color + " " + currentHand.value?.player.getCards()[cardIndex].type)
   if (currentHand.value) {
     if (currentHand.value.play(currentHand.value.player.getCards()[cardIndex], chosenColor)) {
-      currentHand.value.endTurn();
+      hasPlayed = true;
     } else {
       console.warn("Invalid card play");
     }
   }
+  
   chosenCard = 0;
 }
 
@@ -156,13 +171,44 @@ function chooseColor(color: string) {
   }
 }
 
+function calloutUno(){
+  if(currentHand)
+{currentHand.value?.calloutUno();}
+}
+
 
 // Function to draw a card
 function drawCard() {
+  if(hasPlayed)
+  {
+    return;
+  }
+  else 
+  {
+    hasPlayed = true;
+  }
   //console.log("function drawCard() oneHandScreen");
   if (currentHand.value) {
     currentHand.value.drawCard();
-    currentHand.value.endTurn();
+  }
+}
+
+function endTurn() {
+  if(!hasPlayed)
+    {return;}
+  if (currentHand.value) {
+    currentHand.value.endTurn(saidUno);
+    console.log("Turn ended.");
+  }
+}
+
+// Function to declare UNO
+function sayUno() {
+  if (currentHand.value && currentHand.value.player.getCards().length === 1) {
+    console.log("Player says UNO!");
+    saidUno = true;
+  } else {
+    console.warn("Cannot say UNO unless you have only one card left!");
   }
 }
 
@@ -184,12 +230,19 @@ watch(currentHand, (newHand) => {
     if (newHand.getTopCard) {
       discardPile.value = [newHand.getTopCard()];
     }
-    botHands.value = newHand.getBots();
+    botHands.value = Array.from(newHand.getBots().values());
     if (currentHand.value?.hasEnded) {
       endHand()
-      } 
+    }
   }
 }, { deep: true, immediate: true });
+
+watch(() => currentHand.value?.currentPlayer, (newPlayer, oldPlayer) => {
+  if (oldPlayer !== "Player" && newPlayer === "Player") {
+    saidUno = false;
+    hasPlayed = false;
+  }
+});
 
 
 // Initialize the game on mount
@@ -202,11 +255,23 @@ onMounted(() => {
 <style scoped>
 /* Centered draw card button but moved slightly to the right */
 .draw-card-button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px; /* Add spacing between the buttons */
   position: absolute;
   top: 50%;
-  left: 60%;  /* Adjust this value to move it left or right */
+  left: 60%; /* Adjust this value to move it left or right */
   transform: translate(-50%, -50%);
 }
+
+.action-button {
+  padding: 10px 20px;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+
 
 .game-container {
   display: flex;
@@ -216,7 +281,7 @@ onMounted(() => {
   height: 100vh;
   position: relative;
 }
-
+  
 .player-area, .bot-area.top.centered {
   width: 60%;
   margin: 0 auto;
@@ -278,5 +343,25 @@ onMounted(() => {
   padding: 10px 20px;
   font-size: 16px;
 }
+.uno-indicator {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: red;
+  margin-left: 10px;
+  animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.2);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
 
 </style>
